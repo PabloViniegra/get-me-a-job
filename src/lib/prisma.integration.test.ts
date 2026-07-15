@@ -1,7 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import {
+  type ApifyLinkedInJobItem,
+  mapApifyItemToJobOffer,
+} from "./apify-mapper";
 import { prisma } from "./prisma";
 
 const TEST_JOB_ID = "integration-test-job-offer";
+const TEST_DESCRIPTION = "Integration test job offer.";
 
 describe("prisma client (integration)", () => {
   beforeAll(async () => {
@@ -49,6 +54,32 @@ describe("prisma client (integration)", () => {
         whyItFits: "Strong match on stack and seniority.",
         score: 92,
       });
+    } finally {
+      await prisma.jobOffer.deleteMany({ where: { jobId: TEST_JOB_ID } });
+    }
+  });
+
+  it("persists descriptionHash end-to-end: mapper → upsert → read-back", async () => {
+    try {
+      const apifyItem: ApifyLinkedInJobItem = {
+        id: TEST_JOB_ID,
+        link: "https://www.linkedin.com/jobs/view/integration-test",
+        title: "Senior Software Engineer",
+        descriptionText: TEST_DESCRIPTION,
+      };
+      const { jobId, ...fields } = mapApifyItemToJobOffer(apifyItem);
+
+      await prisma.jobOffer.upsert({
+        where: { jobId },
+        create: { jobId, ...fields },
+        update: fields,
+      });
+
+      const found = await prisma.jobOffer.findUniqueOrThrow({
+        where: { jobId: TEST_JOB_ID },
+      });
+
+      expect(found.descriptionHash).toBe(fields.descriptionHash);
     } finally {
       await prisma.jobOffer.deleteMany({ where: { jobId: TEST_JOB_ID } });
     }

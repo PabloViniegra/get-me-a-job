@@ -20,6 +20,7 @@ describe("mapApifyItemToJobOffer", () => {
       salary: "$17.00, $19.00",
       format: "Remote",
       requirements: [],
+      descriptionHash: expect.any(String),
     });
   });
 
@@ -100,5 +101,60 @@ describe("mapApifyItemToJobOffer", () => {
     });
 
     expect(result.format).toBe("Remote");
+  });
+
+  describe("descriptionHash", () => {
+    const baseItem = {
+      id: "8",
+      link: "https://example.com/8",
+      title: "Some Job",
+    };
+
+    it("is deterministic: same description yields the same hash", () => {
+      const descriptionText = "Senior Software Engineer role in Madrid";
+
+      const first = mapApifyItemToJobOffer({ ...baseItem, descriptionText });
+      const second = mapApifyItemToJobOffer({ ...baseItem, descriptionText });
+
+      expect(first.descriptionHash).toBe(second.descriptionHash);
+      expect(first.descriptionHash).toBeTruthy();
+    });
+
+    it("changes when the description changes", () => {
+      const first = mapApifyItemToJobOffer({
+        ...baseItem,
+        descriptionText: "Senior Software Engineer role in Madrid",
+      });
+      const second = mapApifyItemToJobOffer({
+        ...baseItem,
+        descriptionText: "Junior Backend Developer role in Madrid",
+      });
+
+      expect(first.descriptionHash).not.toBe(second.descriptionHash);
+    });
+
+    it("is stable for an empty description", () => {
+      const first = mapApifyItemToJobOffer({
+        ...baseItem,
+        descriptionText: "",
+      });
+      const second = mapApifyItemToJobOffer({
+        ...baseItem,
+        descriptionText: "",
+      });
+
+      expect(first.descriptionHash).toBe(second.descriptionHash);
+      expect(first.descriptionHash).toBeTruthy();
+    });
+
+    it("matches the hash of a missing descriptionText (treated as empty)", () => {
+      const missing = mapApifyItemToJobOffer({ ...baseItem });
+      const empty = mapApifyItemToJobOffer({
+        ...baseItem,
+        descriptionText: "",
+      });
+
+      expect(missing.descriptionHash).toBe(empty.descriptionHash);
+    });
   });
 });
