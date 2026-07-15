@@ -1,5 +1,6 @@
 "use client";
 
+import { Chip } from "@heroui/react";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 
@@ -12,11 +13,11 @@ export default function Home() {
       <h1 className="text-2xl font-semibold text-black dark:text-zinc-50">
         get-me-a-job
       </h1>
-      <p className="text-zinc-600 dark:text-zinc-400">
+      <Chip>
         {ping.isPending && "pinging server..."}
         {ping.isError && `ping failed: ${ping.error.message}`}
         {ping.data && `ping: ${ping.data.status}`}
-      </p>
+      </Chip>
     </div>
   );
 }
