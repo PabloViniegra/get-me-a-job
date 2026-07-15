@@ -102,8 +102,15 @@ describe("POST /api/webhooks/apify", () => {
     expect(apifyClient.dataset).toHaveBeenCalledWith("dataset-1");
     expect(prisma.jobOffer.upsert).toHaveBeenCalledWith({
       where: { jobId: "3692563200" },
-      create: { jobId: "3692563200", ...mappedFields },
-      update: mappedFields,
+      create: {
+        jobId: "3692563200",
+        ...mappedFields,
+        descriptionHash: expect.any(String),
+      },
+      update: {
+        ...mappedFields,
+        descriptionHash: expect.any(String),
+      },
     });
   });
 
@@ -185,7 +192,12 @@ describe("POST /api/webhooks/apify", () => {
     );
     expect(prisma.jobOffer.upsert).toHaveBeenNthCalledWith(
       2,
-      expect.objectContaining({ where: { jobId: "42" } }),
+      expect.objectContaining({
+        where: { jobId: "42" },
+        update: expect.objectContaining({
+          descriptionHash: expect.any(String),
+        }),
+      }),
     );
   });
 

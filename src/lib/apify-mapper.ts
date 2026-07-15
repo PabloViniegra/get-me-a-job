@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 export type ApifyLinkedInJobItem = {
   id: string;
   link: string;
@@ -14,6 +16,7 @@ export type JobOfferInput = {
   salary: string | null;
   format: string;
   requirements: string[];
+  descriptionHash: string;
 };
 
 export function mapApifyItemToJobOffer(
@@ -35,5 +38,6 @@ export function mapApifyItemToJobOffer(
         ? "Hybrid"
         : "On-site",
     requirements: [],
+    descriptionHash: createHash("sha256").update(description).digest("hex"),
   };
 }
