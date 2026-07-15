@@ -1,0 +1,27 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model JobOffer {
+  id           String      @id @default(auto()) @map("_id") @db.ObjectId
+  jobId        String      @unique
+  title        String
+  format       String      // e.g., Remote, Hybrid, On-site
+  salary       String?
+  linkedinUrl  String
+  description  String
+  requirements String[]
+  aiAnalysis   AiAnalysis?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+type AiAnalysis {
+  whyItFits String
+  score     Int
+}
