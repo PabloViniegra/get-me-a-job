@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Get Me a Job
 
-## Getting Started
+Automated job-search dashboard. A daily Apify scrape of LinkedIn listings lands in MongoDB,
+gets graded against your CV by an OpenRouter LLM, and surfaces in a ranked dashboard with a
+per-job conversational copilot.
 
-First, run the development server:
+## Status
+
+Early stage. The cross-cutting plumbing is wired — env validation, Prisma + MongoDB, tRPC +
+TanStack Query, HeroUI v3 with dark/light theming, IBM Plex typography — but the product's core
+epics (scraper webhook, LLM grading, dashboard UI, chat panel) aren't built yet.
+`src/app/page.tsx` currently only renders a tRPC ping round trip as a wiring smoke test.
+
+## Stack
+
+- **Framework:** Next.js 16 (App Router), React 19, TypeScript (strict)
+- **Styling:** Tailwind CSS 4, HeroUI v3, IBM Plex Sans/Mono
+- **Data:** Prisma + MongoDB
+- **API:** tRPC + TanStack Query
+- **AI:** Vercel AI SDK, OpenRouter (LLM grading + chat)
+- **Ingestion:** Apify (`apify-client`)
+- **Tooling:** Bun, Biome, Vitest
+
+## Getting started
+
+Requires [Bun](https://bun.sh).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+bun install
+```
+
+Create a `.env` with:
+
+```
+DATABASE_URL=
+ROUTER_API_KEY=
+APIFY_API_KEY=
+APIFY_WEBHOOK_SECRET=
+```
+
+Place your CV at `cv/CV_2026.pdf` (gitignored — never committed, never sent to the client).
+
+```bash
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command          | Purpose                  |
+| ---------------- | ------------------------- |
+| `bun dev`        | Dev server                |
+| `bun run build`  | Production build          |
+| `bun run start`  | Start production server   |
+| `bun run lint`   | Biome check                |
+| `bun run format` | Biome format (writes)      |
+| `bun run test`   | Vitest (single run)        |
 
-## Learn More
+## Testing
 
-To learn more about Next.js, take a look at the following resources:
+Vitest. Env parsing and the tRPC router have unit tests; Prisma has a live-DB integration test
+(`src/lib/prisma.integration.test.ts`) that requires a valid `DATABASE_URL`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Further reading
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- [`DESIGN-SYSTEM.md`](./DESIGN-SYSTEM.md) — color/type/spacing tokens, component specs, voice.
+- [`docs/agents/`](./docs/agents) — issue-tracker and domain-modeling conventions for agents
+  working in this repo.
 
-## Deploy on Vercel
+## Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Target is [Vercel](https://vercel.com).
