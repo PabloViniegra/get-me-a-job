@@ -76,6 +76,19 @@ describe("mapApifyItemToJobOffer", () => {
     });
 
     expect(result.format).toBe("On-site");
+    expect(result.description).toBe("");
+  });
+
+  it("maps an empty descriptionText to On-site format", () => {
+    const result = mapApifyItemToJobOffer({
+      id: "7",
+      link: "https://example.com/7",
+      title: "Some Job",
+      descriptionText: "",
+    });
+
+    expect(result.format).toBe("On-site");
+    expect(result.description).toBe("");
   });
 
   it("known ceiling: negated remote phrasing still maps to Remote format", () => {
