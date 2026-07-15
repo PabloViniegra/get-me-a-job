@@ -2,7 +2,6 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
-import { JobCard } from "./job-card";
 
 export function JobsDashboard() {
   const trpc = useTRPC();
@@ -35,8 +34,11 @@ export function JobsDashboard() {
   return (
     <ul className="flex w-full max-w-2xl flex-col gap-2 p-4">
       {jobs.data.map((job) => (
-        <li key={job.id}>
-          <JobCard data={job} />
+        <li
+          key={job.id}
+          className="rounded border border-zinc-200 px-3 py-2 text-black dark:border-zinc-800 dark:text-zinc-50"
+        >
+          {job.title}
         </li>
       ))}
     </ul>
