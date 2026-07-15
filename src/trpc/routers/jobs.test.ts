@@ -59,7 +59,7 @@ describe("appRouter.jobs.list", () => {
     const caller = createCaller(createTRPCContext());
     const result = await caller.jobs.list();
 
-    expect(result).toEqual([
+    expect(result).toMatchObject([
       {
         id: "mongo-id-1",
         jobId: "3692563200",

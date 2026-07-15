@@ -4,6 +4,10 @@ export type JobCardData = {
   id: string;
   jobId: string;
   title: string;
+  format: string;
+  salary: string | null;
+  linkedinUrl: string;
+  createdAt: Date;
   descriptionPreview: string;
   whyItFitsPreview: string | null;
   requirements: string[];
@@ -68,6 +72,10 @@ export function toJobCardData(row: JobOfferRow): JobCardData {
     id: row.id,
     jobId: row.jobId,
     title: row.title,
+    format: row.format,
+    salary: row.salary,
+    linkedinUrl: row.linkedinUrl,
+    createdAt: row.createdAt,
     descriptionPreview: truncate(row.description, DESCRIPTION_PREVIEW_MAX),
     whyItFitsPreview,
     requirements,

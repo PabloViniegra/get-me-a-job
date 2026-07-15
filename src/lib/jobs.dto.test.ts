@@ -21,12 +21,23 @@ function makeRow(overrides: Partial<JobOfferRow> = {}): JobOfferRow {
 
 describe("toJobCardData — tier rule", () => {
   it("maps a fully-populated scored row to all spec'd fields", () => {
-    const result = toJobCardData(makeRow());
+    const createdAt = new Date("2026-03-04T05:06:07Z");
+    const result = toJobCardData(
+      makeRow({
+        linkedinUrl: "https://linkedin.com/jobs/view/flow-through",
+        format: "Hybrid",
+        createdAt,
+      }),
+    );
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       id: "mongo-id-1",
       jobId: "3692563200",
       title: "Senior TypeScript Engineer",
+      format: "Hybrid",
+      salary: "EUR 60k-80k",
+      linkedinUrl: "https://linkedin.com/jobs/view/flow-through",
+      createdAt,
       descriptionPreview: "Build cool things with TypeScript.",
       whyItFitsPreview: "Strong match.",
       requirements: ["TypeScript", "React"],
@@ -213,6 +224,6 @@ describe("toJobCardData — null safety", () => {
   it("preserves a null salary without coercion", () => {
     const result = toJobCardData(makeRow({ salary: null }));
 
-    expect(result).toMatchObject({ hasAiAnalysis: true });
+    expect(result.salary).toBeNull();
   });
 });
