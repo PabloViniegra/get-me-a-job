@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
 import { env } from "@/env";
+import { apifyClient } from "@/lib/apify";
+import type { ApifyLinkedInJobItem } from "@/lib/apify-mapper";
+import { mapApifyItemToJobOffer } from "@/lib/apify-mapper";
+import { prisma } from "@/lib/prisma";
 
 type ApifyWebhookPayload = {
   eventType?: string;
+  resource?: {
+    defaultDatasetId?: string;
+  };
 };
 
 export async function POST(request: Request) {
@@ -20,6 +27,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true }, { status: 200 });
   }
 
-  // Placeholder: dataset fetch + JobOffer upsert lands in a later ticket.
+  const datasetId = payload.resource?.defaultDatasetId;
+  if (!datasetId) {
+    return NextResponse.json({ ok: true }, { status: 200 });
+  }
+
+  const { items } = await apifyClient
+    .dataset<ApifyLinkedInJobItem>(datasetId)
+    .listItems();
+
+  for (const item of items) {
+    const { jobId, ...fields } = mapApifyItemToJobOffer(item);
+    await prisma.jobOffer.upsert({
+      where: { jobId },
+      create: { jobId, ...fields },
+      update: fields,
+    });
+  }
+
   return NextResponse.json({ ok: true }, { status: 200 });
 }
