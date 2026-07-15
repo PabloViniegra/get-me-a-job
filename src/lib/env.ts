@@ -5,6 +5,9 @@ const envSchema = z.object({
   ROUTER_API_KEY: z.string(),
   APIFY_API_KEY: z.string(),
   APIFY_WEBHOOK_SECRET: z.string(),
+  OPENROUTER_MODEL: z
+    .string()
+    .default("meta-llama/llama-3.3-70b-instruct:free"),
 });
 
 export type Env = z.infer<typeof envSchema>;
