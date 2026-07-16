@@ -36,6 +36,9 @@ yarn-error.log*
 # CV (personal data, server-only — never publicly served)
 /cv/
 
+# Personal working tracker (not source of truth — see GitHub Issues)
+/tasks.md
+
 # vercel
 .vercel
 
@@ -53,3 +56,4 @@ opencode.json
 skills-lock.json
 
 PRD.md
+.env*.local

@@ -24,10 +24,10 @@ function hashDescription(description: string): string {
 
 async function main() {
   const apifyItem = {
-    id: SMOKE_JOB_ID,
-    link: `https://www.linkedin.com/jobs/view/smoke-test-${SMOKE_JOB_ID}`,
-    title: "Senior Full-Stack Engineer (Smoke Test)",
-    descriptionText:
+    jobId: SMOKE_JOB_ID,
+    jobUrl: `https://www.linkedin.com/jobs/view/smoke-test-${SMOKE_JOB_ID}`,
+    jobTitle: "Senior Full-Stack Engineer (Smoke Test)",
+    jobDescription:
       "We are looking for a senior engineer with TypeScript, React, and Next.js experience. You will own the full stack of our product, work closely with design, and ship to production continuously.",
     salaryInfo: ["€50,000", "€70,000"],
   };

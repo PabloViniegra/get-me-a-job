@@ -93,10 +93,11 @@ describe("POST /api/webhooks/apify", () => {
 
   it("returns 200 and upserts the mapped job when eventType is ACTOR.RUN.SUCCEEDED", async () => {
     const item = {
-      id: "3692563200",
-      link: "https://www.linkedin.com/jobs/view/english-data-labeling-analyst-at-facebook-3692563200",
-      title: "English Data Labeling Analyst",
-      descriptionText: "APPROVED REMOTE LOCATIONS: Los Angeles, CA",
+      jobId: "3692563200",
+      jobUrl:
+        "https://www.linkedin.com/jobs/view/english-data-labeling-analyst-at-facebook-3692563200",
+      jobTitle: "English Data Labeling Analyst",
+      jobDescription: "APPROVED REMOTE LOCATIONS: Los Angeles, CA",
       salaryInfo: ["$17.00", "$19.00"],
     };
     mockDataset([item]);
@@ -150,19 +151,19 @@ describe("POST /api/webhooks/apify", () => {
   it("upserts every item in the dataset, including a mapper edge case", async () => {
     const items = [
       {
-        id: "1",
-        link: "https://example.com/1",
-        title: "Job A",
-        descriptionText: "Remote role",
+        jobId: "1",
+        jobUrl: "https://example.com/1",
+        jobTitle: "Job A",
+        jobDescription: "Remote role",
       },
       {
-        id: "2",
-        link: "https://example.com/2",
-        title: "Job B",
-        descriptionText: "On-site role",
+        jobId: "2",
+        jobUrl: "https://example.com/2",
+        jobTitle: "Job B",
+        jobDescription: "On-site role",
         salaryInfo: [],
       },
-      { id: "3", link: "https://example.com/3", title: "Job C" },
+      { jobId: "3", jobUrl: "https://example.com/3", jobTitle: "Job C" },
     ];
     mockDataset(items);
 
@@ -203,10 +204,10 @@ describe("POST /api/webhooks/apify", () => {
 
   it("re-posting the same payload calls upsert again with the same jobId key", async () => {
     const item = {
-      id: "42",
-      link: "https://example.com/42",
-      title: "Repeat Job",
-      descriptionText: "Hybrid role",
+      jobId: "42",
+      jobUrl: "https://example.com/42",
+      jobTitle: "Repeat Job",
+      jobDescription: "Hybrid role",
     };
     mockDataset([item]);
 
@@ -248,10 +249,10 @@ describe("POST /api/webhooks/apify", () => {
 
   it("writes no aiAnalysis and still returns 200 when gradeJob returns null", async () => {
     const item = {
-      id: "111",
-      link: "https://example.com/111",
-      title: "Grader Fail Job",
-      descriptionText: "On-site role",
+      jobId: "111",
+      jobUrl: "https://example.com/111",
+      jobTitle: "Grader Fail Job",
+      jobDescription: "On-site role",
     };
     mockDataset([item]);
     vi.mocked(prisma.jobOffer.findUnique).mockResolvedValue(null);
@@ -277,10 +278,10 @@ describe("POST /api/webhooks/apify", () => {
     vi.mocked(loadCV).mockRejectedValueOnce(new Error("pdf missing"));
 
     const item = {
-      id: "222",
-      link: "https://example.com/222",
-      title: "Any Job",
-      descriptionText: "Remote role",
+      jobId: "222",
+      jobUrl: "https://example.com/222",
+      jobTitle: "Any Job",
+      jobDescription: "Remote role",
     };
     mockDataset([item]);
 
@@ -301,10 +302,10 @@ describe("POST /api/webhooks/apify", () => {
 
   it("skips grading when stored hash matches incoming and aiAnalysis is already set", async () => {
     const item = {
-      id: "333",
-      link: "https://example.com/333",
-      title: "Stable Job",
-      descriptionText: "Stable description that won't change",
+      jobId: "333",
+      jobUrl: "https://example.com/333",
+      jobTitle: "Stable Job",
+      jobDescription: "Stable description that won't change",
     };
     mockDataset([item]);
 
@@ -333,10 +334,10 @@ describe("POST /api/webhooks/apify", () => {
 
   it("re-grades when stored hash matches but aiAnalysis is null (defensive)", async () => {
     const item = {
-      id: "444",
-      link: "https://example.com/444",
-      title: "Previously Failed Job",
-      descriptionText: "Same description as before",
+      jobId: "444",
+      jobUrl: "https://example.com/444",
+      jobTitle: "Previously Failed Job",
+      jobDescription: "Same description as before",
     };
     mockDataset([item]);
 
@@ -372,10 +373,10 @@ describe("POST /api/webhooks/apify", () => {
 
   it("re-grades and overwrites aiAnalysis when stored hash differs from incoming", async () => {
     const item = {
-      id: "555",
-      link: "https://example.com/555",
-      title: "Edited Job",
-      descriptionText: "New edited description",
+      jobId: "555",
+      jobUrl: "https://example.com/555",
+      jobTitle: "Edited Job",
+      jobDescription: "New edited description",
     };
     mockDataset([item]);
 

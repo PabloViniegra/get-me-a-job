@@ -62,10 +62,10 @@ describe("prisma client (integration)", () => {
   it("persists descriptionHash end-to-end: mapper → upsert → read-back", async () => {
     try {
       const apifyItem: ApifyLinkedInJobItem = {
-        id: TEST_JOB_ID,
-        link: "https://www.linkedin.com/jobs/view/integration-test",
-        title: "Senior Software Engineer",
-        descriptionText: TEST_DESCRIPTION,
+        jobId: TEST_JOB_ID,
+        jobUrl: "https://www.linkedin.com/jobs/view/integration-test",
+        jobTitle: "Senior Software Engineer",
+        jobDescription: TEST_DESCRIPTION,
       };
       const { jobId, ...fields } = mapApifyItemToJobOffer(apifyItem);
 

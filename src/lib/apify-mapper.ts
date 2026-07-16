@@ -1,11 +1,14 @@
 import { createHash } from "node:crypto";
 
+// Output shape for `cheap_scraper/linkedin-job-scraper`.
+// https://apify.com/cheap_scraper/linkedin-job-scraper
 export type ApifyLinkedInJobItem = {
-  id: string;
-  link: string;
-  title: string;
-  descriptionText?: string;
+  jobId: string;
+  jobTitle: string;
+  jobUrl: string;
+  jobDescription?: string;
   salaryInfo?: string[];
+  location?: string;
 };
 
 export type JobOfferInput = {
@@ -22,22 +25,26 @@ export type JobOfferInput = {
 export function mapApifyItemToJobOffer(
   item: ApifyLinkedInJobItem,
 ): JobOfferInput {
-  const description = item.descriptionText ?? "";
+  const description = item.jobDescription ?? "";
 
   return {
-    jobId: item.id,
-    title: item.title,
-    linkedinUrl: item.link,
+    jobId: item.jobId,
+    title: item.jobTitle,
+    linkedinUrl: item.jobUrl,
     description,
     salary: item.salaryInfo?.length ? item.salaryInfo.join(", ") : null,
-    // ponytail: keyword regex, false positives on negated phrasing (e.g. "not
-    // remote") — upgrade to Epic 2's LLM grading step if this ceiling matters.
-    format: /remote/i.test(description)
-      ? "Remote"
-      : /hybrid/i.test(description)
-        ? "Hybrid"
-        : "On-site",
+    // ponytail: keyword regex on description + location — actor doesn't expose
+    // work location directly (its output `workType` is job function, not Remote/Hybrid).
+    // Revisit when Epic 2 grading upgrades format detection.
+    format: detectFormat(description, item.location),
     requirements: [],
     descriptionHash: createHash("sha256").update(description).digest("hex"),
   };
+}
+
+function detectFormat(description: string, location?: string): string {
+  const haystack = `${description}\n${location ?? ""}`;
+  if (/remote|remoto/i.test(haystack)) return "Remote";
+  if (/hybrid|híbrido/i.test(haystack)) return "Hybrid";
+  return "On-site";
 }

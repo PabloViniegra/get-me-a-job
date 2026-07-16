@@ -2,23 +2,27 @@ import { describe, expect, it } from "vitest";
 import { mapApifyItemToJobOffer } from "./apify-mapper";
 
 describe("mapApifyItemToJobOffer", () => {
-  it("maps a full happy-path item", () => {
+  it("maps a full happy-path item (cheap_scraper shape)", () => {
     const result = mapApifyItemToJobOffer({
-      id: "3692563200",
-      link: "https://www.linkedin.com/jobs/view/english-data-labeling-analyst-at-facebook-3692563200",
-      title: "English Data Labeling Analyst",
-      descriptionText: "APPROVED REMOTE LOCATIONS: Los Angeles, CA",
-      salaryInfo: ["$17.00", "$19.00"],
+      jobId: "4354494117",
+      jobTitle: "Full-Stack Software Engineer, Inference",
+      jobUrl:
+        "https://ca.linkedin.com/jobs/view/full-stack-software-engineer-inference-at-cohere-4354494117",
+      jobDescription:
+        "Cohere is looking for a Full-Stack Engineer. This is a hybrid role in Toronto.",
+      salaryInfo: ["$69100.00", "$129200.00"],
+      location: "Toronto, Ontario, Canada",
     });
 
     expect(result).toEqual({
-      jobId: "3692563200",
-      title: "English Data Labeling Analyst",
+      jobId: "4354494117",
+      title: "Full-Stack Software Engineer, Inference",
       linkedinUrl:
-        "https://www.linkedin.com/jobs/view/english-data-labeling-analyst-at-facebook-3692563200",
-      description: "APPROVED REMOTE LOCATIONS: Los Angeles, CA",
-      salary: "$17.00, $19.00",
-      format: "Remote",
+        "https://ca.linkedin.com/jobs/view/full-stack-software-engineer-inference-at-cohere-4354494117",
+      description:
+        "Cohere is looking for a Full-Stack Engineer. This is a hybrid role in Toronto.",
+      salary: "$69100.00, $129200.00",
+      format: "Hybrid",
       requirements: [],
       descriptionHash: expect.any(String),
     });
@@ -26,10 +30,10 @@ describe("mapApifyItemToJobOffer", () => {
 
   it("maps an empty salaryInfo array to a null salary", () => {
     const result = mapApifyItemToJobOffer({
-      id: "1",
-      link: "https://example.com/1",
-      title: "Some Job",
-      descriptionText: "On-site role in Madrid",
+      jobId: "1",
+      jobUrl: "https://example.com/1",
+      jobTitle: "Some Job",
+      jobDescription: "On-site role in Madrid",
       salaryInfo: [],
     });
 
@@ -38,21 +42,32 @@ describe("mapApifyItemToJobOffer", () => {
 
   it("maps a missing salaryInfo field to a null salary", () => {
     const result = mapApifyItemToJobOffer({
-      id: "2",
-      link: "https://example.com/2",
-      title: "Some Job",
-      descriptionText: "On-site role in Madrid",
+      jobId: "2",
+      jobUrl: "https://example.com/2",
+      jobTitle: "Some Job",
+      jobDescription: "On-site role in Madrid",
     });
 
     expect(result.salary).toBeNull();
   });
 
+  it("maps a description mentioning remote to Remote format", () => {
+    const result = mapApifyItemToJobOffer({
+      jobId: "3",
+      jobUrl: "https://example.com/3",
+      jobTitle: "Some Job",
+      jobDescription: "This is a remote role based in Madrid",
+    });
+
+    expect(result.format).toBe("Remote");
+  });
+
   it("maps a description mentioning hybrid to Hybrid format", () => {
     const result = mapApifyItemToJobOffer({
-      id: "3",
-      link: "https://example.com/3",
-      title: "Some Job",
-      descriptionText: "This is a hybrid role based in Madrid",
+      jobId: "4",
+      jobUrl: "https://example.com/4",
+      jobTitle: "Some Job",
+      jobDescription: "Hybrid role in Madrid",
     });
 
     expect(result.format).toBe("Hybrid");
@@ -60,32 +75,32 @@ describe("mapApifyItemToJobOffer", () => {
 
   it("maps a description with neither keyword to On-site format", () => {
     const result = mapApifyItemToJobOffer({
-      id: "4",
-      link: "https://example.com/4",
-      title: "Some Job",
-      descriptionText: "Join our office in Madrid full time",
+      jobId: "5",
+      jobUrl: "https://example.com/5",
+      jobTitle: "Some Job",
+      jobDescription: "Join our office in Madrid full time",
     });
 
     expect(result.format).toBe("On-site");
   });
 
-  it("maps missing descriptionText to On-site format without throwing", () => {
+  it("maps missing jobDescription to On-site format without throwing", () => {
     const result = mapApifyItemToJobOffer({
-      id: "5",
-      link: "https://example.com/5",
-      title: "Some Job",
+      jobId: "6",
+      jobUrl: "https://example.com/6",
+      jobTitle: "Some Job",
     });
 
     expect(result.format).toBe("On-site");
     expect(result.description).toBe("");
   });
 
-  it("maps an empty descriptionText to On-site format", () => {
+  it("maps an empty jobDescription to On-site format", () => {
     const result = mapApifyItemToJobOffer({
-      id: "7",
-      link: "https://example.com/7",
-      title: "Some Job",
-      descriptionText: "",
+      jobId: "7",
+      jobUrl: "https://example.com/7",
+      jobTitle: "Some Job",
+      jobDescription: "",
     });
 
     expect(result.format).toBe("On-site");
@@ -94,10 +109,22 @@ describe("mapApifyItemToJobOffer", () => {
 
   it("known ceiling: negated remote phrasing still maps to Remote format", () => {
     const result = mapApifyItemToJobOffer({
-      id: "6",
-      link: "https://example.com/6",
-      title: "Some Job",
-      descriptionText: "This is NOT a remote position",
+      jobId: "8",
+      jobUrl: "https://example.com/8",
+      jobTitle: "Some Job",
+      jobDescription: "This is NOT a remote position",
+    });
+
+    expect(result.format).toBe("Remote");
+  });
+
+  it("falls back to location for format when description is silent", () => {
+    const result = mapApifyItemToJobOffer({
+      jobId: "9",
+      jobUrl: "https://example.com/9",
+      jobTitle: "Some Job",
+      jobDescription: "Some generic JD without location keyword.",
+      location: "Remote, Spain",
     });
 
     expect(result.format).toBe("Remote");
@@ -105,16 +132,16 @@ describe("mapApifyItemToJobOffer", () => {
 
   describe("descriptionHash", () => {
     const baseItem = {
-      id: "8",
-      link: "https://example.com/8",
-      title: "Some Job",
+      jobId: "10",
+      jobUrl: "https://example.com/10",
+      jobTitle: "Some Job",
     };
 
     it("is deterministic: same description yields the same hash", () => {
-      const descriptionText = "Senior Software Engineer role in Madrid";
+      const jobDescription = "Senior Software Engineer role in Madrid";
 
-      const first = mapApifyItemToJobOffer({ ...baseItem, descriptionText });
-      const second = mapApifyItemToJobOffer({ ...baseItem, descriptionText });
+      const first = mapApifyItemToJobOffer({ ...baseItem, jobDescription });
+      const second = mapApifyItemToJobOffer({ ...baseItem, jobDescription });
 
       expect(first.descriptionHash).toBe(second.descriptionHash);
       expect(first.descriptionHash).toBeTruthy();
@@ -123,36 +150,30 @@ describe("mapApifyItemToJobOffer", () => {
     it("changes when the description changes", () => {
       const first = mapApifyItemToJobOffer({
         ...baseItem,
-        descriptionText: "Senior Software Engineer role in Madrid",
+        jobDescription: "Senior Software Engineer role in Madrid",
       });
       const second = mapApifyItemToJobOffer({
         ...baseItem,
-        descriptionText: "Junior Backend Developer role in Madrid",
+        jobDescription: "Junior Backend Developer role in Madrid",
       });
 
       expect(first.descriptionHash).not.toBe(second.descriptionHash);
     });
 
     it("is stable for an empty description", () => {
-      const first = mapApifyItemToJobOffer({
-        ...baseItem,
-        descriptionText: "",
-      });
+      const first = mapApifyItemToJobOffer({ ...baseItem, jobDescription: "" });
       const second = mapApifyItemToJobOffer({
         ...baseItem,
-        descriptionText: "",
+        jobDescription: "",
       });
 
       expect(first.descriptionHash).toBe(second.descriptionHash);
       expect(first.descriptionHash).toBeTruthy();
     });
 
-    it("matches the hash of a missing descriptionText (treated as empty)", () => {
+    it("matches the hash of a missing jobDescription (treated as empty)", () => {
       const missing = mapApifyItemToJobOffer({ ...baseItem });
-      const empty = mapApifyItemToJobOffer({
-        ...baseItem,
-        descriptionText: "",
-      });
+      const empty = mapApifyItemToJobOffer({ ...baseItem, jobDescription: "" });
 
       expect(missing.descriptionHash).toBe(empty.descriptionHash);
     });
