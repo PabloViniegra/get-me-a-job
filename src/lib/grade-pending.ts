@@ -54,13 +54,27 @@ export async function gradePendingJobs(
   const limit = options.limit ?? DEFAULT_LIMIT;
   const concurrency = Math.max(1, options.concurrency ?? DEFAULT_CONCURRENCY);
 
+  console.info(
+    `[grade-pending] ENTRY limit=${limit} concurrency=${concurrency}`,
+  );
+
   const cvText = await loadCV();
 
-  const pending = await prismaOverride.jobOffer.findMany({
-    where: { aiAnalysis: null },
-    take: limit,
+  // ponytail: Prisma MongoDB null-query on optional embedded fields is flaky
+  // across versions — fetch a window and filter in JS. We have < 1k jobs, so
+  // a single take(500) is cheap.
+  const candidates = await prismaOverride.jobOffer.findMany({
+    take: 500,
     orderBy: { updatedAt: "asc" },
   });
+
+  const pending = candidates
+    .filter((row) => row.aiAnalysis === null || row.aiAnalysis === undefined)
+    .slice(0, limit);
+
+  console.info(
+    `[grade-pending] candidates=${candidates.length} pending=${pending.length}`,
+  );
 
   if (pending.length === 0) {
     return { considered: 0, succeeded: 0, failed: 0, errors: [] };

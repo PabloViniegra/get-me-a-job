@@ -48,7 +48,9 @@ export async function gradeJob(
 ): Promise<AiAnalysis | null> {
   const { client, cvText, job } = inputs;
   const start = performance.now();
-  console.info(`[grading] start jobId=${job.jobId} model=${model}`);
+  console.info(
+    `[grading] start jobId=${job.jobId} model=${model} cvLen=${cvText.length}`,
+  );
 
   const prompt = PROMPT_TEMPLATE.replace("{CV}", cvText).replace(
     "{JOB}",
@@ -62,7 +64,9 @@ export async function gradeJob(
     raw = await client.complete(prompt, { signal });
   } catch (err) {
     const reason = signal.aborted || isAbortError(err) ? "timeout" : "network";
-    console.info(`[grading] error jobId=${job.jobId} reason=${reason}`);
+    console.info(
+      `[grading] error jobId=${job.jobId} model=${model} cvLen=${cvText.length} reason=${reason} detail=${(err as Error)?.message ?? String(err)}`,
+    );
     return null;
   }
 
@@ -70,19 +74,23 @@ export async function gradeJob(
   try {
     parsed = JSON.parse(raw);
   } catch {
-    console.info(`[grading] error jobId=${job.jobId} reason=parse`);
+    console.info(
+      `[grading] error jobId=${job.jobId} reason=parse rawLen=${raw.length} rawStart=${raw.slice(0, 80)}`,
+    );
     return null;
   }
 
   const result = aiAnalysisSchema.safeParse(parsed);
   if (!result.success) {
-    console.info(`[grading] error jobId=${job.jobId} reason=validation`);
+    console.info(
+      `[grading] error jobId=${job.jobId} reason=validation issues=${JSON.stringify(result.error.issues)}`,
+    );
     return null;
   }
 
   const dur = Math.round(performance.now() - start);
   console.info(
-    `[grading] ok jobId=${job.jobId} score=${result.data.score} dur=${dur}`,
+    `[grading] ok jobId=${job.jobId} model=${model} cvLen=${cvText.length} score=${result.data.score} dur=${dur}`,
   );
   return result.data;
 }
