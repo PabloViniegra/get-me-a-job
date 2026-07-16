@@ -8,7 +8,16 @@ import { prisma } from "./prisma";
 const TEST_JOB_ID = "integration-test-job-offer";
 const TEST_DESCRIPTION = "Integration test job offer.";
 
-describe("prisma client (integration)", () => {
+// Live integration test — requires a valid DATABASE_URL.
+// Run with: bun run test -- src/lib/prisma.integration.test.ts (and a real MongoDB)
+const isIntegrationEnabled =
+  process.env.RUN_INTEGRATION === "1" &&
+  process.env.DATABASE_URL?.startsWith("mongodb") &&
+  !process.env.DATABASE_URL.includes("localhost:27017/test");
+
+const suite = isIntegrationEnabled ? describe : describe.skip;
+
+suite("prisma client (integration)", () => {
   beforeAll(async () => {
     await prisma.jobOffer.deleteMany({ where: { jobId: TEST_JOB_ID } });
   });

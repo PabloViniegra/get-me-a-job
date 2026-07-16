@@ -8,6 +8,7 @@ describe("parseEnv", () => {
       ROUTER_API_KEY: "router-key",
       APIFY_API_KEY: "apify-key",
       APIFY_WEBHOOK_SECRET: "webhook-secret",
+      APIFY_ADMIN_SECRET: "admin-secret",
     });
 
     expect(result).toEqual({
@@ -15,6 +16,7 @@ describe("parseEnv", () => {
       ROUTER_API_KEY: "router-key",
       APIFY_API_KEY: "apify-key",
       APIFY_WEBHOOK_SECRET: "webhook-secret",
+      APIFY_ADMIN_SECRET: "admin-secret",
       OPENROUTER_MODEL: "meta-llama/llama-3.3-70b-instruct:free",
     });
   });
@@ -25,6 +27,7 @@ describe("parseEnv", () => {
       ROUTER_API_KEY: "router-key",
       APIFY_API_KEY: "apify-key",
       APIFY_WEBHOOK_SECRET: "webhook-secret",
+      APIFY_ADMIN_SECRET: "admin-secret",
     });
 
     expect(result.OPENROUTER_MODEL).toBe(
@@ -38,6 +41,7 @@ describe("parseEnv", () => {
       ROUTER_API_KEY: "router-key",
       APIFY_API_KEY: "apify-key",
       APIFY_WEBHOOK_SECRET: "webhook-secret",
+      APIFY_ADMIN_SECRET: "admin-secret",
       OPENROUTER_MODEL: "anthropic/claude-3.5-sonnet",
     });
 
@@ -50,6 +54,7 @@ describe("parseEnv", () => {
       ROUTER_API_KEY: "router-key",
       APIFY_API_KEY: "apify-key",
       APIFY_WEBHOOK_SECRET: "webhook-secret",
+      APIFY_ADMIN_SECRET: "admin-secret",
       CV_TEXT: "UEFCTE8gVklOSUVHUkE=",
     });
 
@@ -62,6 +67,7 @@ describe("parseEnv", () => {
       ROUTER_API_KEY: "router-key",
       APIFY_API_KEY: "apify-key",
       APIFY_WEBHOOK_SECRET: "webhook-secret",
+      APIFY_ADMIN_SECRET: "admin-secret",
     });
 
     expect(result.CV_TEXT).toBeUndefined();
@@ -74,6 +80,8 @@ describe("parseEnv", () => {
         ROUTER_API_KEY: "router-key",
         APIFY_API_KEY: "apify-key",
       }),
-    ).toThrow("Invalid environment variables: APIFY_WEBHOOK_SECRET");
+    ).toThrow(
+      "Invalid environment variables: APIFY_WEBHOOK_SECRET, APIFY_ADMIN_SECRET",
+    );
   });
 });

@@ -15,18 +15,12 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     jobOffer: {
       upsert: vi.fn(),
-      findUnique: vi.fn(),
-      update: vi.fn(),
     },
   },
 }));
 
 vi.mock("@/lib/grader", () => ({
   gradeJob: vi.fn(),
-}));
-
-vi.mock("@/lib/cv", () => ({
-  loadCV: vi.fn().mockResolvedValue("test-cv-text"),
 }));
 
 vi.mock("@/lib/openrouter", () => ({
@@ -89,6 +83,8 @@ describe("POST /api/webhooks/apify", () => {
     const response = await POST(request);
 
     expect(response.status).toBe(200);
+    expect(apifyClient.dataset).not.toHaveBeenCalled();
+    expect(prisma.jobOffer.upsert).not.toHaveBeenCalled();
   });
 
   it("returns 200 and upserts the mapped job when eventType is ACTOR.RUN.SUCCEEDED", async () => {
@@ -101,11 +97,6 @@ describe("POST /api/webhooks/apify", () => {
       salaryInfo: ["$17.00", "$19.00"],
     };
     mockDataset([item]);
-    vi.mocked(prisma.jobOffer.findUnique).mockResolvedValue(null);
-    vi.mocked(gradeJob).mockResolvedValue({
-      score: 87,
-      whyItFits: "Strong TypeScript match.",
-    });
 
     const request = makeRequest(
       {
@@ -138,12 +129,6 @@ describe("POST /api/webhooks/apify", () => {
       update: {
         ...mappedFields,
         descriptionHash: expect.any(String),
-      },
-    });
-    expect(prisma.jobOffer.update).toHaveBeenCalledWith({
-      where: { jobId: "3692563200" },
-      data: {
-        aiAnalysis: { score: 87, whyItFits: "Strong TypeScript match." },
       },
     });
   });
@@ -247,163 +232,25 @@ describe("POST /api/webhooks/apify", () => {
     expect(response.status).toBe(200);
   });
 
-  it("writes no aiAnalysis and still returns 200 when gradeJob returns null", async () => {
+  it("does NOT call gradeJob (grading moved to /api/admin/grade)", async () => {
     const item = {
-      jobId: "111",
-      jobUrl: "https://example.com/111",
-      jobTitle: "Grader Fail Job",
-      jobDescription: "On-site role",
+      jobId: "1",
+      jobUrl: "https://example.com/1",
+      jobTitle: "Any",
+      jobDescription: "Any",
     };
     mockDataset([item]);
-    vi.mocked(prisma.jobOffer.findUnique).mockResolvedValue(null);
-    vi.mocked(gradeJob).mockResolvedValue(null);
 
-    const response = await POST(
+    await POST(
       makeRequest(
         {
           eventType: "ACTOR.RUN.SUCCEEDED",
-          resource: { defaultDatasetId: "dataset-null" },
+          resource: { defaultDatasetId: "dataset-no-grade" },
         },
         "Bearer test-webhook-secret",
       ),
     );
 
-    expect(response.status).toBe(200);
-    expect(gradeJob).toHaveBeenCalledTimes(1);
-    expect(prisma.jobOffer.update).not.toHaveBeenCalled();
-  });
-
-  it("skips grading and returns 200 when loadCV rejects", async () => {
-    const { loadCV } = await import("@/lib/cv");
-    vi.mocked(loadCV).mockRejectedValueOnce(new Error("pdf missing"));
-
-    const item = {
-      jobId: "222",
-      jobUrl: "https://example.com/222",
-      jobTitle: "Any Job",
-      jobDescription: "Remote role",
-    };
-    mockDataset([item]);
-
-    const response = await POST(
-      makeRequest(
-        {
-          eventType: "ACTOR.RUN.SUCCEEDED",
-          resource: { defaultDatasetId: "dataset-cv-fail" },
-        },
-        "Bearer test-webhook-secret",
-      ),
-    );
-
-    expect(response.status).toBe(200);
     expect(gradeJob).not.toHaveBeenCalled();
-    expect(prisma.jobOffer.update).not.toHaveBeenCalled();
-  });
-
-  it("skips grading when stored hash matches incoming and aiAnalysis is already set", async () => {
-    const item = {
-      jobId: "333",
-      jobUrl: "https://example.com/333",
-      jobTitle: "Stable Job",
-      jobDescription: "Stable description that won't change",
-    };
-    mockDataset([item]);
-
-    const mapped = (await import("@/lib/apify-mapper")).mapApifyItemToJobOffer(
-      item,
-    );
-    vi.mocked(prisma.jobOffer.findUnique).mockResolvedValue({
-      descriptionHash: mapped.descriptionHash,
-      aiAnalysis: { score: 80, whyItFits: "previous result" },
-    } as never);
-
-    const response = await POST(
-      makeRequest(
-        {
-          eventType: "ACTOR.RUN.SUCCEEDED",
-          resource: { defaultDatasetId: "dataset-stable" },
-        },
-        "Bearer test-webhook-secret",
-      ),
-    );
-
-    expect(response.status).toBe(200);
-    expect(gradeJob).not.toHaveBeenCalled();
-    expect(prisma.jobOffer.update).not.toHaveBeenCalled();
-  });
-
-  it("re-grades when stored hash matches but aiAnalysis is null (defensive)", async () => {
-    const item = {
-      jobId: "444",
-      jobUrl: "https://example.com/444",
-      jobTitle: "Previously Failed Job",
-      jobDescription: "Same description as before",
-    };
-    mockDataset([item]);
-
-    const mapped = (await import("@/lib/apify-mapper")).mapApifyItemToJobOffer(
-      item,
-    );
-    vi.mocked(prisma.jobOffer.findUnique).mockResolvedValue({
-      descriptionHash: mapped.descriptionHash,
-      aiAnalysis: null,
-    } as never);
-    vi.mocked(gradeJob).mockResolvedValue({
-      score: 65,
-      whyItFits: "Partial match.",
-    });
-
-    const response = await POST(
-      makeRequest(
-        {
-          eventType: "ACTOR.RUN.SUCCEEDED",
-          resource: { defaultDatasetId: "dataset-recover" },
-        },
-        "Bearer test-webhook-secret",
-      ),
-    );
-
-    expect(response.status).toBe(200);
-    expect(gradeJob).toHaveBeenCalledTimes(1);
-    expect(prisma.jobOffer.update).toHaveBeenCalledWith({
-      where: { jobId: "444" },
-      data: { aiAnalysis: { score: 65, whyItFits: "Partial match." } },
-    });
-  });
-
-  it("re-grades and overwrites aiAnalysis when stored hash differs from incoming", async () => {
-    const item = {
-      jobId: "555",
-      jobUrl: "https://example.com/555",
-      jobTitle: "Edited Job",
-      jobDescription: "New edited description",
-    };
-    mockDataset([item]);
-
-    vi.mocked(prisma.jobOffer.findUnique).mockResolvedValue({
-      descriptionHash: "old-hash-not-matching",
-      aiAnalysis: { score: 40, whyItFits: "stale" },
-    } as never);
-    vi.mocked(gradeJob).mockResolvedValue({
-      score: 92,
-      whyItFits: "Excellent fit.",
-    });
-
-    const response = await POST(
-      makeRequest(
-        {
-          eventType: "ACTOR.RUN.SUCCEEDED",
-          resource: { defaultDatasetId: "dataset-edited" },
-        },
-        "Bearer test-webhook-secret",
-      ),
-    );
-
-    expect(response.status).toBe(200);
-    expect(gradeJob).toHaveBeenCalledTimes(1);
-    expect(prisma.jobOffer.update).toHaveBeenCalledWith({
-      where: { jobId: "555" },
-      data: { aiAnalysis: { score: 92, whyItFits: "Excellent fit." } },
-    });
   });
 });
