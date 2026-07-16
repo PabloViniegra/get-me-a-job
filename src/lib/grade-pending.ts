@@ -13,6 +13,7 @@ export type GradePendingOptions = {
 export type GradePendingError = {
   jobId: string;
   reason: string;
+  detail?: string;
 };
 
 export type GradePendingResult = {
@@ -87,13 +88,20 @@ export async function gradePendingJobs(
     const batch = pending.slice(i, i + concurrency);
     const results = await Promise.allSettled(
       batch.map(async (row) => {
+        const failure: { reason?: string; detail?: string } = {};
         const result = await gradeJob({
           client: openRouterClient,
           cvText,
           job: toJobSnapshot(row),
+          onFailure: (reason, detail) => {
+            failure.reason = reason;
+            failure.detail = detail;
+          },
         });
         if (!result) {
-          throw new Error("grade-returned-null");
+          const err = new Error(failure.reason ?? "grade-returned-null");
+          (err as Error & { detail?: string }).detail = failure.detail;
+          throw err;
         }
         return result;
       }),
@@ -110,11 +118,13 @@ export async function gradePendingJobs(
         });
         succeeded += 1;
       } else {
-        const reason =
-          settled.reason instanceof Error
-            ? settled.reason.message
-            : String(settled.reason);
-        errors.push({ jobId: row.jobId, reason });
+        const e = settled.reason as Error & { detail?: string };
+        const reason = e?.message ?? "grade-returned-null";
+        errors.push({
+          jobId: row.jobId,
+          reason,
+          detail: e?.detail,
+        });
       }
     }
   }

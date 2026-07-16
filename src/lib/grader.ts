@@ -16,10 +16,17 @@ export type JobSnapshot = {
   requirements: string[];
 };
 
+export type GraderFailureReason =
+  | "network"
+  | "timeout"
+  | "parse"
+  | "validation";
+
 export type GraderInputs = {
   client: OpenRouterClient;
   cvText: string;
   job: JobSnapshot;
+  onFailure?: (reason: GraderFailureReason, detail?: string) => void;
 };
 
 const aiAnalysisSchema = z.object({
@@ -64,9 +71,11 @@ export async function gradeJob(
     raw = await client.complete(prompt, { signal });
   } catch (err) {
     const reason = signal.aborted || isAbortError(err) ? "timeout" : "network";
+    const detail = (err as Error)?.message ?? String(err);
     console.info(
-      `[grading] error jobId=${job.jobId} model=${model} cvLen=${cvText.length} reason=${reason} detail=${(err as Error)?.message ?? String(err)}`,
+      `[grading] error jobId=${job.jobId} model=${model} cvLen=${cvText.length} reason=${reason} detail=${detail}`,
     );
+    inputs.onFailure?.(reason, detail);
     return null;
   }
 
@@ -74,17 +83,19 @@ export async function gradeJob(
   try {
     parsed = JSON.parse(raw);
   } catch {
-    console.info(
-      `[grading] error jobId=${job.jobId} reason=parse rawLen=${raw.length} rawStart=${raw.slice(0, 80)}`,
-    );
+    const detail = `rawLen=${raw.length} rawStart=${raw.slice(0, 80)}`;
+    console.info(`[grading] error jobId=${job.jobId} reason=parse ${detail}`);
+    inputs.onFailure?.("parse", detail);
     return null;
   }
 
   const result = aiAnalysisSchema.safeParse(parsed);
   if (!result.success) {
+    const detail = JSON.stringify(result.error.issues);
     console.info(
-      `[grading] error jobId=${job.jobId} reason=validation issues=${JSON.stringify(result.error.issues)}`,
+      `[grading] error jobId=${job.jobId} reason=validation issues=${detail}`,
     );
+    inputs.onFailure?.("validation", detail);
     return null;
   }
 
