@@ -1,27 +1,60 @@
 import * as fs from "node:fs";
 import path from "node:path";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { loadCV } from "./cv";
 
 afterEach(() => {
-  vi.doUnmock("node:fs");
+  vi.unstubAllEnvs();
   vi.resetModules();
 });
 
-describe("loadCV", () => {
+describe("loadCV — env var path (Vercel / production)", () => {
+  it("decodes the base64 CV_TEXT env var instead of reading disk", async () => {
+    const cvText = "PABLO VINIEGRA\nSenior Engineer";
+    vi.stubEnv("CV_TEXT", Buffer.from(cvText).toString("base64"));
+    vi.resetModules();
+
+    const { loadCV: loadCVFresh } = await import("./cv");
+    const text = await loadCVFresh();
+
+    expect(text).toBe(cvText);
+  });
+
+  it("treats empty CV_TEXT as not-set and falls through to disk", async () => {
+    vi.stubEnv("CV_TEXT", "");
+    vi.resetModules();
+
+    const text = await loadCV();
+
+    expect(typeof text).toBe("string");
+    expect(text.length).toBeGreaterThan(0);
+  });
+
+  it("returns identical text across consecutive calls (module cache)", async () => {
+    const cvText = "PABLO VINIEGRA\nSenior Engineer";
+    vi.stubEnv("CV_TEXT", Buffer.from(cvText).toString("base64"));
+    vi.resetModules();
+
+    const { loadCV: loadCVFresh } = await import("./cv");
+    const first = await loadCVFresh();
+    const second = await loadCVFresh();
+
+    expect(second).toBe(first);
+  });
+});
+
+describe("loadCV — fs fallback (local dev when CV_TEXT is unset)", () => {
+  beforeEach(() => {
+    vi.stubEnv("CV_TEXT", "");
+    vi.resetModules();
+  });
+
   it("returns the parsed plain text of cv/CV_2026.pdf containing a known marker", async () => {
     const text = await loadCV();
 
     expect(typeof text).toBe("string");
     expect(text.length).toBeGreaterThan(0);
     expect(text).toContain("PABLO VINIEGRA");
-  });
-
-  it("returns identical text across consecutive calls (module-level cache)", async () => {
-    const first = await loadCV();
-    const second = await loadCV();
-
-    expect(second).toBe(first);
   });
 
   it("throws when fs.readFileSync fails", async () => {

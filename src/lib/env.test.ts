@@ -44,6 +44,29 @@ describe("parseEnv", () => {
     expect(result.OPENROUTER_MODEL).toBe("anthropic/claude-3.5-sonnet");
   });
 
+  it("accepts CV_TEXT (base64-encoded CV) when provided", () => {
+    const result = parseEnv({
+      DATABASE_URL: "mongodb://localhost:27017/test",
+      ROUTER_API_KEY: "router-key",
+      APIFY_API_KEY: "apify-key",
+      APIFY_WEBHOOK_SECRET: "webhook-secret",
+      CV_TEXT: "UEFCTE8gVklOSUVHUkE=",
+    });
+
+    expect(result.CV_TEXT).toBe("UEFCTE8gVklOSUVHUkE=");
+  });
+
+  it("returns undefined CV_TEXT when not provided (local dev fallback)", () => {
+    const result = parseEnv({
+      DATABASE_URL: "mongodb://localhost:27017/test",
+      ROUTER_API_KEY: "router-key",
+      APIFY_API_KEY: "apify-key",
+      APIFY_WEBHOOK_SECRET: "webhook-secret",
+    });
+
+    expect(result.CV_TEXT).toBeUndefined();
+  });
+
   it("throws a clear error when a required var is missing", () => {
     expect(() =>
       parseEnv({

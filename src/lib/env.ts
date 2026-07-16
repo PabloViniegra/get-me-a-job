@@ -8,6 +8,9 @@ const envSchema = z.object({
   OPENROUTER_MODEL: z
     .string()
     .default("meta-llama/llama-3.3-70b-instruct:free"),
+  // Base64-encoded CV plain text. Required in environments where the
+  // cv/ directory isn't deployed (Vercel). Falls back to fs read in dev.
+  CV_TEXT: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
