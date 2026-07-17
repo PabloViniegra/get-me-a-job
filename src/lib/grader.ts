@@ -36,6 +36,16 @@ const aiAnalysisSchema = z.object({
 
 const DEFAULT_MODEL = "meta-llama/llama-3.3-70b-instruct:free";
 const GRADING_TIMEOUT_MS = 30_000;
+const MAX_GRADE_ATTEMPTS = 3;
+const RETRY_DELAY_BASE_MS = 2000;
+
+export type GradeOptions = {
+  sleep?: (ms: number) => Promise<void>;
+};
+
+async function defaultSleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 const PROMPT_TEMPLATE = [
   "You are grading how well a candidate's CV matches a LinkedIn job posting.",
@@ -52,8 +62,9 @@ const PROMPT_TEMPLATE = [
 export async function gradeJob(
   inputs: GraderInputs,
   model: string = DEFAULT_MODEL,
+  options: GradeOptions = {},
 ): Promise<AiAnalysis | null> {
-  const { client, cvText, job } = inputs;
+  const { cvText, job } = inputs;
   const start = performance.now();
   console.info(
     `[grading] start jobId=${job.jobId} model=${model} cvLen=${cvText.length}`,
@@ -64,20 +75,14 @@ export async function gradeJob(
     formatJob(job),
   );
 
-  const signal = AbortSignal.timeout(GRADING_TIMEOUT_MS);
-
-  let raw: string;
-  try {
-    raw = await client.complete(prompt, { signal });
-  } catch (err) {
-    const reason = signal.aborted || isAbortError(err) ? "timeout" : "network";
-    const detail = (err as Error)?.message ?? String(err);
-    console.info(
-      `[grading] error jobId=${job.jobId} model=${model} cvLen=${cvText.length} reason=${reason} detail=${detail}`,
-    );
-    inputs.onFailure?.(reason, detail);
-    return null;
-  }
+  const raw = await callWithRetry({
+    prompt,
+    job,
+    model,
+    inputs,
+    sleep: options.sleep ?? defaultSleep,
+  });
+  if (raw === null) return null;
 
   let parsed: unknown;
   try {
@@ -104,6 +109,41 @@ export async function gradeJob(
     `[grading] ok jobId=${job.jobId} model=${model} cvLen=${cvText.length} score=${result.data.score} dur=${dur}`,
   );
   return result.data;
+}
+
+async function callWithRetry(args: {
+  prompt: string;
+  job: JobSnapshot;
+  model: string;
+  inputs: GraderInputs;
+  sleep: (ms: number) => Promise<void>;
+}): Promise<string | null> {
+  const { prompt, job, model, inputs, sleep } = args;
+  for (let attempt = 1; attempt <= MAX_GRADE_ATTEMPTS; attempt++) {
+    const signal = AbortSignal.timeout(GRADING_TIMEOUT_MS);
+    try {
+      return await inputs.client.complete(prompt, { signal });
+    } catch (err) {
+      const errStatus = (err as { status?: unknown })?.status;
+      const isLastAttempt = attempt === MAX_GRADE_ATTEMPTS;
+      if (errStatus !== 429 || isLastAttempt) {
+        const reason =
+          signal.aborted || isAbortError(err) ? "timeout" : "network";
+        const detail = (err as Error)?.message ?? String(err);
+        console.info(
+          `[grading] error jobId=${job.jobId} model=${model} cvLen=${inputs.cvText.length} reason=${reason} detail=${detail}`,
+        );
+        inputs.onFailure?.(reason, detail);
+        return null;
+      }
+      const delayMs = RETRY_DELAY_BASE_MS * 2 ** (attempt - 1);
+      console.info(
+        `[grading] retry jobId=${job.jobId} attempt=${attempt} delayMs=${delayMs}`,
+      );
+      await sleep(delayMs);
+    }
+  }
+  return null;
 }
 
 function isAbortError(err: unknown): boolean {

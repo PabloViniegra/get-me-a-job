@@ -29,9 +29,11 @@ export function createOpenRouterClient(config: {
         signal: opts?.signal,
       });
       if (!response.ok) {
-        throw new Error(
+        const error: Error & { status?: number } = new Error(
           `OpenRouter request failed: ${response.status} ${response.statusText}`,
         );
+        error.status = response.status;
+        throw error;
       }
       const result = (await response.json()) as {
         choices: { message: { content: string } }[];

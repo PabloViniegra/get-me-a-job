@@ -205,6 +205,131 @@ describe("gradeJob", () => {
     expect(logText(infoSpy)).toContain("reason=timeout");
   });
 
+  it("retries on HTTP 429 and succeeds on the 2nd attempt (A6)", async () => {
+    const successBody = JSON.stringify({
+      score: 88,
+      whyItFits: "Strong TS match.",
+    });
+    const tooManyRequests: Error & { status?: number } = new Error(
+      "OpenRouter request failed: 429 Too Many Requests",
+    );
+    tooManyRequests.status = 429;
+    const complete = vi
+      .fn()
+      .mockRejectedValueOnce(tooManyRequests)
+      .mockResolvedValueOnce(successBody);
+    const sleep = vi.fn().mockResolvedValue(undefined);
+
+    const result = await gradeJob(
+      { client: { complete }, cvText: CV_TEXT, job: JOB },
+      undefined,
+      { sleep },
+    );
+
+    expect(complete).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ score: 88, whyItFits: "Strong TS match." });
+  });
+
+  it("retries twice on HTTP 429 and succeeds on the 3rd attempt (A6)", async () => {
+    const successBody = JSON.stringify({ score: 91, whyItFits: "Excellent." });
+    const tooManyRequests = (): Error & { status?: number } => {
+      const e = new Error("OpenRouter request failed: 429") as Error & {
+        status?: number;
+      };
+      e.status = 429;
+      return e;
+    };
+    const complete = vi
+      .fn()
+      .mockRejectedValueOnce(tooManyRequests())
+      .mockRejectedValueOnce(tooManyRequests())
+      .mockResolvedValueOnce(successBody);
+    const sleep = vi.fn().mockResolvedValue(undefined);
+
+    const result = await gradeJob(
+      { client: { complete }, cvText: CV_TEXT, job: JOB },
+      undefined,
+      { sleep },
+    );
+
+    expect(complete).toHaveBeenCalledTimes(3);
+    expect(sleep).toHaveBeenCalledTimes(2);
+    expect(result).toEqual({ score: 91, whyItFits: "Excellent." });
+  });
+
+  it("returns null with reason=network after exhausting 3 attempts on persistent 429 (A6)", async () => {
+    const tooManyRequests = (): Error & { status?: number } => {
+      const e = new Error("OpenRouter request failed: 429") as Error & {
+        status?: number;
+      };
+      e.status = 429;
+      return e;
+    };
+    const complete = vi
+      .fn()
+      .mockRejectedValueOnce(tooManyRequests())
+      .mockRejectedValueOnce(tooManyRequests())
+      .mockRejectedValueOnce(tooManyRequests());
+    const sleep = vi.fn().mockResolvedValue(undefined);
+
+    const result = await gradeJob(
+      { client: { complete }, cvText: CV_TEXT, job: JOB },
+      undefined,
+      { sleep },
+    );
+
+    expect(complete).toHaveBeenCalledTimes(3);
+    expect(result).toBeNull();
+    expect(logText(infoSpy)).toContain("reason=network");
+  });
+
+  it("does NOT retry on non-429 HTTP errors (e.g., 500) (A6)", async () => {
+    const serverError: Error & { status?: number } = new Error(
+      "OpenRouter request failed: 500 Internal Server Error",
+    );
+    serverError.status = 500;
+    const complete = vi.fn().mockRejectedValueOnce(serverError);
+    const sleep = vi.fn().mockResolvedValue(undefined);
+
+    const result = await gradeJob(
+      { client: { complete }, cvText: CV_TEXT, job: JOB },
+      undefined,
+      { sleep },
+    );
+
+    expect(complete).toHaveBeenCalledTimes(1);
+    expect(sleep).not.toHaveBeenCalled();
+    expect(result).toBeNull();
+    expect(logText(infoSpy)).toContain("reason=network");
+  });
+
+  it("applies exponential backoff delays between retries (A6)", async () => {
+    const tooManyRequests = (): Error & { status?: number } => {
+      const e = new Error("OpenRouter request failed: 429") as Error & {
+        status?: number;
+      };
+      e.status = 429;
+      return e;
+    };
+    const complete = vi
+      .fn()
+      .mockRejectedValueOnce(tooManyRequests())
+      .mockRejectedValueOnce(tooManyRequests())
+      .mockRejectedValueOnce(tooManyRequests());
+    const sleep = vi.fn().mockResolvedValue(undefined);
+
+    await gradeJob(
+      { client: { complete }, cvText: CV_TEXT, job: JOB },
+      undefined,
+      { sleep },
+    );
+
+    expect(sleep).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenNthCalledWith(1, 2000);
+    expect(sleep).toHaveBeenNthCalledWith(2, 4000);
+  });
+
   it("never logs the CV text - redaction guardrail (PRD section 5)", async () => {
     const cvMarker = "CV_POISON_MARKER_42_unique_string";
     const poisonedCv = `${CV_TEXT}\n${cvMarker}`;
