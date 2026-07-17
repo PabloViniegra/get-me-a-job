@@ -1,13 +1,11 @@
 # Get Me a Job
 
 Automated job-search dashboard. A daily Apify scrape of LinkedIn listings lands in MongoDB,
-gets graded against your CV by an OpenRouter LLM, and surfaces in a ranked dashboard with a
-per-job conversational copilot.
+gets graded against your CV by an OpenRouter LLM, and surfaces in a ranked dashboard.
 
 ## Status
 
-Epics 1-3 are functional end-to-end against the real LinkedIn dataset. Epic 4 (per-job chat
-copilot) is not started.
+Epics 1-3 are functional end-to-end against the real LinkedIn dataset.
 
 ## Stack
 
@@ -15,7 +13,7 @@ copilot) is not started.
 - **Styling:** Tailwind CSS 4, HeroUI v3, IBM Plex Sans/Mono
 - **Data:** Prisma + MongoDB
 - **API:** tRPC + TanStack Query
-- **AI:** Vercel AI SDK, OpenRouter (LLM grading + chat)
+- **AI:** OpenRouter (LLM grading)
 - **Ingestion:** Apify (`apify-client`)
 - **Tooling:** Bun, Biome, Vitest
 

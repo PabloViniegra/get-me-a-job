@@ -211,7 +211,7 @@ Maps to `JobOffer` (PRD §4). Anatomy, top to bottom:
 - **Body:** `description` (Body level, clamped), `requirements` as a `TagGroup` of chips, `salary`
   — if `null`, render `"Not disclosed"` in tertiary text, never hide the row (data states matter).
 - **Footer:** relative timestamp (`date-fns`, `es` locale, e.g. "hace 2 horas") in Caption/muted,
-  outbound `linkedinUrl` link (`--link` = `--accent`, per the override above), Chat button.
+  outbound `linkedinUrl` link (`--link` = `--accent`, per the override above).
 - **Surface:** `--surface` + `--border`, `--radius` (8px), card padding 16–24px.
 
 ### Match Score Chip (signature)
@@ -238,13 +238,6 @@ component, per Design Philosophy #5.
 HeroUI `Skeleton` (FR-3.3) matching the exact Job Card structure (same padding, same radius, same
 slot sizes) so nothing shifts on load — a skeleton that doesn't match its loaded shape is worse
 than a spinner.
-
-### Copilot Chat Panel
-
-FR-4.1's "side sheet" maps to HeroUI's `Drawer` — right edge, desktop, `--overlay` +
-`--overlay-shadow`, `calc(var(--radius) * 2)` radius on the leading edge. Streamed tokens (`useChat`)
-render in Body style; user messages align opposite the assistant for quick scanning. Context is
-locked to one job + the CV — no cross-job affordances in this panel (no "switch job" control).
 
 ### Toast (sileo)
 

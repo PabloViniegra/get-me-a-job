@@ -2,10 +2,9 @@
 "use no memo";
 
 import { Card, Chip, Link, TagGroup } from "@heroui/react";
-import { Clock } from "lucide-react";
+import { Clock, ExternalLink } from "lucide-react";
 import type { JobCardData } from "@/lib/jobs.dto";
 import { relativeJobTime } from "@/lib/relative-time";
-import { ChatStubButton } from "./chat-stub-button";
 import { MatchScoreChip } from "./match-score-chip";
 
 type JobCardProps = { data: JobCardData };
@@ -29,9 +28,7 @@ export function JobCard({ data }: JobCardProps) {
             hasAiAnalysis={data.hasAiAnalysis}
           />
         </div>
-        <div className="flex flex-row gap-1.5">
-          <Chip>{data.format}</Chip>
-        </div>
+        <Chip>{data.format}</Chip>
       </Card.Header>
       <Card.Content className="gap-3">
         <p className="line-clamp-3 text-sm leading-[1.5] font-normal text-foreground">
@@ -68,20 +65,17 @@ export function JobCard({ data }: JobCardProps) {
           <Clock aria-hidden="true" size={12} />
           {relativeJobTime(data.createdAt)}
         </span>
-        <div className="flex items-center gap-2">
-          {linkedinHref ? (
-            <Link
-              href={linkedinHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs"
-            >
-              <Link.Icon aria-hidden="true" />
-              LinkedIn
-            </Link>
-          ) : null}
-          <ChatStubButton />
-        </div>
+        {linkedinHref ? (
+          <Link
+            href={linkedinHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs"
+          >
+            LinkedIn
+            <ExternalLink aria-hidden="true" size={12} strokeWidth={2} />
+          </Link>
+        ) : null}
       </Card.Footer>
     </Card>
   );
