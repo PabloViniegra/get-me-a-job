@@ -33,6 +33,7 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
+.env.check
 
 # CV (personal data, server-only — never publicly served)
 /cv/
