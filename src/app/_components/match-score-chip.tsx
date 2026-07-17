@@ -1,3 +1,5 @@
+"use no memo";
+
 import { Chip } from "@heroui/react";
 import { Sparkles } from "lucide-react";
 import type { JSX } from "react";

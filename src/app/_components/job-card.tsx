@@ -1,4 +1,5 @@
 "use client";
+"use no memo";
 
 import { Card, Chip } from "@heroui/react";
 import type { JobCardData } from "@/lib/jobs.dto";

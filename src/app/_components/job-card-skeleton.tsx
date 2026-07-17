@@ -1,3 +1,5 @@
+"use no memo";
+
 import { Skeleton } from "@heroui/react";
 
 export function JobCardSkeleton() {
