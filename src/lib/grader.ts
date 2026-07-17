@@ -81,7 +81,7 @@ export async function gradeJob(
 
   let parsed: unknown;
   try {
-    parsed = JSON.parse(raw);
+    parsed = JSON.parse(extractJsonObject(raw));
   } catch {
     const detail = `rawLen=${raw.length} rawStart=${raw.slice(0, 80)}`;
     console.info(`[grading] error jobId=${job.jobId} reason=parse ${detail}`);
@@ -109,6 +109,13 @@ export async function gradeJob(
 function isAbortError(err: unknown): boolean {
   if (typeof err !== "object" || err === null) return false;
   return (err as { name?: unknown }).name === "AbortError";
+}
+
+function extractJsonObject(raw: string): string {
+  const start = raw.indexOf("{");
+  const end = raw.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) return raw;
+  return raw.slice(start, end + 1);
 }
 
 function formatJob(job: JobSnapshot): string {

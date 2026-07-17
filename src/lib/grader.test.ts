@@ -65,6 +65,68 @@ describe("gradeJob", () => {
     expect(logText(infoSpy)).toContain("reason=parse");
   });
 
+  it("strips a prose preamble before the JSON object", async () => {
+    const complete = vi
+      .fn()
+      .mockResolvedValue(
+        `Here is the JSON response based on the provided information:\n\n${JSON.stringify(
+          { score: 88, whyItFits: "Strong match." },
+        )}`,
+      );
+    const result = await gradeJob({
+      client: { complete },
+      cvText: CV_TEXT,
+      job: JOB,
+    });
+
+    expect(result).toEqual({ score: 88, whyItFits: "Strong match." });
+  });
+
+  it("strips trailing prose after the JSON object", async () => {
+    const complete = vi
+      .fn()
+      .mockResolvedValue(
+        `${JSON.stringify({ score: 72, whyItFits: "Decent." })}\nI hope this helps with your decision.`,
+      );
+    const result = await gradeJob({
+      client: { complete },
+      cvText: CV_TEXT,
+      job: JOB,
+    });
+
+    expect(result).toEqual({ score: 72, whyItFits: "Decent." });
+  });
+
+  it("strips both preamble and trailing prose around the JSON object", async () => {
+    const complete = vi
+      .fn()
+      .mockResolvedValue(
+        `Sure! Here you go:\n${JSON.stringify({ score: 91, whyItFits: "Excellent." })}\nLet me know if you need anything else.`,
+      );
+    const result = await gradeJob({
+      client: { complete },
+      cvText: CV_TEXT,
+      job: JOB,
+    });
+
+    expect(result).toEqual({ score: 91, whyItFits: "Excellent." });
+  });
+
+  it("strips a markdown json code fence around the JSON object", async () => {
+    const complete = vi
+      .fn()
+      .mockResolvedValue(
+        `\`\`\`json\n${JSON.stringify({ score: 65, whyItFits: "Ok." })}\n\`\`\``,
+      );
+    const result = await gradeJob({
+      client: { complete },
+      cvText: CV_TEXT,
+      job: JOB,
+    });
+
+    expect(result).toEqual({ score: 65, whyItFits: "Ok." });
+  });
+
   it("returns null with reason=validation when required fields are missing", async () => {
     const complete = vi.fn().mockResolvedValue(JSON.stringify({}));
     const result = await gradeJob({
