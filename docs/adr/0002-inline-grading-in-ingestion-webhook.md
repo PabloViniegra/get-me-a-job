@@ -1,6 +1,6 @@
 # ADR-0002: Inline grading in the Apify ingestion webhook
 
-**Status:** Accepted (2026-07-15)
+**Status:** Superseded by [ADR-0003](./0003-decouple-grading-from-ingestion-webhook.md) (2026-07-18)
 **Deciders:** Pablo Viniegra
 **Related:** Issue #14 (Epic 2 spec), Issue #19 (Ticket 11 — implementation).
 
