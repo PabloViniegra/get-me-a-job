@@ -7,7 +7,7 @@ export type JobCardData = {
   format: string;
   salary: string | null;
   linkedinUrl: string;
-  createdAt: Date | string;
+  createdAt: Date;
   descriptionPreview: string;
   whyItFitsPreview: string | null;
   requirements: string[];
