@@ -5,7 +5,7 @@ import { Skeleton } from "@heroui/react";
 export function JobCardSkeleton() {
   return (
     <div
-      className="rounded-lg border border-border p-4"
+      className="h-full rounded-lg border border-border p-4"
       aria-hidden="true"
       role="presentation"
     >

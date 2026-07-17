@@ -81,8 +81,18 @@ export function MatchScoreChip({
     ) : null;
 
   return (
-    <Chip className={classes.container} title={`Match ${score} sobre 100`}>
+    <Chip
+      className={classes.container}
+      title={
+        tier === "excellent"
+          ? `Match excelente: ${score} sobre 100`
+          : `Match ${score} sobre 100`
+      }
+    >
       {leading}
+      {tier === "excellent" ? (
+        <span className="text-xs font-medium">Excelente</span>
+      ) : null}
       <span className={classes.text}>{score}</span>
     </Chip>
   );

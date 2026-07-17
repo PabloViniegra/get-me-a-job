@@ -18,7 +18,7 @@ export function JobCard({ data }: JobCardProps) {
     : null;
 
   return (
-    <Card className="rounded-lg border border-border p-4 transition-colors duration-150 ease-out hover:border-border-secondary">
+    <Card className="h-full rounded-lg border border-border p-4 transition-colors duration-150 ease-out hover:border-border-secondary">
       <Card.Header className="flex-col items-stretch gap-2">
         <div className="flex flex-row items-center justify-between gap-3">
           <Card.Title className="text-base leading-[1.4] font-semibold text-foreground">

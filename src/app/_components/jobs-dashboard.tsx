@@ -50,7 +50,7 @@ export function JobsDashboard() {
   });
 
   return (
-    <section className="flex w-full max-w-2xl flex-col gap-4 p-4">
+    <section className="flex w-full max-w-7xl flex-col gap-4 p-4">
       <header className="flex items-center justify-between">
         <h1 className="text-lg font-semibold text-foreground">Ofertas</h1>
         <Button
@@ -66,7 +66,7 @@ export function JobsDashboard() {
       {jobs.data ? <DashboardStats jobs={jobs.data} /> : null}
 
       {view === "loading" ? (
-        <ul className="flex flex-col gap-2">
+        <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {SKELETON_KEYS.map((key) => (
             <li key={key}>
               <JobCardSkeleton />
@@ -85,7 +85,10 @@ export function JobsDashboard() {
       {view === "empty" ? <EmptyState onRetry={handleRetry} /> : null}
 
       {view === "cards" && jobs.data ? (
-        <ul aria-busy={jobs.isFetching} className="flex flex-col gap-2">
+        <ul
+          aria-busy={jobs.isFetching}
+          className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
+        >
           {jobs.data.map((job, index) => (
             <li
               key={job.id}
