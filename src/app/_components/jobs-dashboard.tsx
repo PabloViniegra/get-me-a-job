@@ -7,8 +7,8 @@ import { RefreshCw } from "lucide-react";
 import { useCallback } from "react";
 import { sileo } from "sileo";
 import { useTRPC } from "@/trpc/client";
-import { refreshJobsList } from "./dashboard-refresh";
 import { resolveDashboardView } from "./dashboard-state";
+import { DashboardStats } from "./dashboard-stats";
 import { EmptyState } from "./empty-state";
 import { ErrorState } from "./error-state";
 import { JobCard } from "./job-card";
@@ -30,11 +30,14 @@ export function JobsDashboard() {
   }, [queryClient, trpc]);
 
   const handleRefresh = useCallback(() => {
-    void sileo.promise(refreshJobsList(queryClient, trpc), {
-      loading: { title: "Actualizando ofertas…" },
-      success: { title: "Ofertas actualizadas" },
-      error: { title: "No se pudo actualizar" },
-    });
+    void sileo.promise(
+      queryClient.refetchQueries(trpc.jobs.list.queryFilter()),
+      {
+        loading: { title: "Actualizando ofertas…" },
+        success: { title: "Ofertas actualizadas" },
+        error: { title: "No se pudo actualizar" },
+      },
+    );
   }, [queryClient, trpc]);
 
   const view = resolveDashboardView({
@@ -56,6 +59,8 @@ export function JobsDashboard() {
           Actualizar
         </Button>
       </header>
+
+      {jobs.data ? <DashboardStats jobs={jobs.data} /> : null}
 
       {view === "loading" ? (
         <ul className="flex flex-col gap-2">
