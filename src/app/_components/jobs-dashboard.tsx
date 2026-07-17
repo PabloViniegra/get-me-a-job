@@ -1,8 +1,12 @@
 "use client";
 
+import { Button } from "@heroui/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { RefreshCw } from "lucide-react";
 import { useCallback } from "react";
+import { sileo } from "sileo";
 import { useTRPC } from "@/trpc/client";
+import { refreshJobsList } from "./dashboard-refresh";
 import { resolveDashboardView } from "./dashboard-state";
 import { EmptyState } from "./empty-state";
 import { ErrorState } from "./error-state";
@@ -24,48 +28,62 @@ export function JobsDashboard() {
     void queryClient.invalidateQueries(trpc.jobs.list.queryFilter());
   }, [queryClient, trpc]);
 
+  const handleRefresh = useCallback(() => {
+    void sileo.promise(refreshJobsList(queryClient, trpc), {
+      loading: { title: "Actualizando ofertas…" },
+      success: { title: "Ofertas actualizadas" },
+      error: { title: "No se pudo actualizar" },
+    });
+  }, [queryClient, trpc]);
+
   const view = resolveDashboardView({
     isPending: jobs.isPending,
     isError: jobs.isError,
     dataLength: jobs.data?.length ?? 0,
   });
 
-  if (view === "loading") {
-    return (
-      <ul className="flex w-full max-w-2xl flex-col gap-2 p-4">
-        {SKELETON_KEYS.map((key) => (
-          <li key={key}>
-            <JobCardSkeleton />
-          </li>
-        ))}
-      </ul>
-    );
-  }
-
-  if (view === "error") {
-    return (
-      <ErrorState
-        errorMessage={jobs.error?.message ?? ""}
-        onRetry={handleRetry}
-      />
-    );
-  }
-
-  if (view === "empty") {
-    return <EmptyState onRetry={handleRetry} />;
-  }
-
-  if (!jobs.data) {
-    return null;
-  }
-
   return (
-    <ul className="flex w-full max-w-2xl flex-col gap-2 p-4">
-      {jobs.data.map((job) => (
-        <li key={job.id}>
-          <JobCard data={job} />
-        </li>
-      ))}
-    </ul>
+    <section className="flex w-full max-w-2xl flex-col gap-4 p-4">
+      <header className="flex items-center justify-between">
+        <h1 className="text-lg font-semibold text-foreground">Ofertas</h1>
+        <Button
+          aria-label="Actualizar ofertas"
+          variant="secondary"
+          onPress={handleRefresh}
+        >
+          <RefreshCw size={16} aria-hidden="true" />
+          Actualizar
+        </Button>
+      </header>
+
+      {view === "loading" ? (
+        <ul className="flex flex-col gap-2">
+          {SKELETON_KEYS.map((key) => (
+            <li key={key}>
+              <JobCardSkeleton />
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {view === "error" ? (
+        <ErrorState
+          errorMessage={jobs.error?.message ?? ""}
+          onRetry={handleRetry}
+        />
+      ) : null}
+
+      {view === "empty" ? <EmptyState onRetry={handleRetry} /> : null}
+
+      {view === "cards" && jobs.data ? (
+        <ul className="flex flex-col gap-2">
+          {jobs.data.map((job) => (
+            <li key={job.id}>
+              <JobCard data={job} />
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </section>
   );
 }

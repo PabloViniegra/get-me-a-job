@@ -5,6 +5,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { ThemeProvider } from "next-themes";
 import { useState } from "react";
+import { Toaster } from "sileo";
 import superjson from "superjson";
 import { TRPCProvider } from "@/trpc/client";
 import { makeQueryClient } from "@/trpc/query-client";
@@ -39,6 +40,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
           {children}
+          <Toaster position="top-right" />
         </TRPCProvider>
       </QueryClientProvider>
     </ThemeProvider>
