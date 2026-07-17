@@ -6,10 +6,8 @@ per-job conversational copilot.
 
 ## Status
 
-Early stage. The cross-cutting plumbing is wired — env validation, Prisma + MongoDB, tRPC +
-TanStack Query, HeroUI v3 with dark/light theming, IBM Plex typography — but the product's core
-epics (scraper webhook, LLM grading, dashboard UI, chat panel) aren't built yet.
-`src/app/page.tsx` currently only renders a tRPC ping round trip as a wiring smoke test.
+Epics 1-3 are functional end-to-end against the real LinkedIn dataset. Epic 4 (per-job chat
+copilot) is not started.
 
 ## Stack
 
@@ -29,13 +27,15 @@ Requires [Bun](https://bun.sh).
 bun install
 ```
 
-Create a `.env` with:
+Create a `.env` (see [`.env.example`](./.env.example) for the full list with defaults). The
+required keys are:
 
 ```
 DATABASE_URL=
 ROUTER_API_KEY=
 APIFY_API_KEY=
 APIFY_WEBHOOK_SECRET=
+APIFY_ADMIN_SECRET=
 ```
 
 Place your CV at `cv/CV_2026.pdf` (gitignored — never committed, never sent to the client).
