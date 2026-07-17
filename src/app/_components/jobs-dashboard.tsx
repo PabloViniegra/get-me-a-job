@@ -19,6 +19,8 @@ const SKELETON_KEYS = Array.from(
   { length: SKELETON_COUNT },
   (_, i) => `skeleton-${i}`,
 );
+const STAGGER_STEP_MS = 60;
+const STAGGER_INDEX_CAP = 6;
 
 export function JobsDashboard() {
   const trpc = useTRPC();
@@ -82,9 +84,15 @@ export function JobsDashboard() {
       {view === "empty" ? <EmptyState onRetry={handleRetry} /> : null}
 
       {view === "cards" && jobs.data ? (
-        <ul className="flex flex-col gap-2">
-          {jobs.data.map((job) => (
-            <li key={job.id}>
+        <ul aria-busy={jobs.isFetching} className="flex flex-col gap-2">
+          {jobs.data.map((job, index) => (
+            <li
+              key={job.id}
+              className="motion-safe:animate-job-enter"
+              style={{
+                animationDelay: `${Math.min(index, STAGGER_INDEX_CAP) * STAGGER_STEP_MS}ms`,
+              }}
+            >
               <JobCard data={job} />
             </li>
           ))}
