@@ -1,4 +1,6 @@
-export type ScoreTier = "pending" | "excellent" | "worth" | "low";
+import { type ScoreTier, scoreTier } from "@/lib/score-tier";
+
+export type { ScoreTier };
 
 export type JobCardData = {
   id: string;
@@ -48,10 +50,10 @@ function firstParagraph(text: string): string {
 }
 
 function tierFor(aiAnalysis: JobOfferRow["aiAnalysis"]): ScoreTier {
-  if (aiAnalysis === null) return "pending";
-  if (aiAnalysis.score >= 85) return "excellent";
-  if (aiAnalysis.score >= 65) return "worth";
-  return "low";
+  return scoreTier(
+    aiAnalysis === null ? null : aiAnalysis.score,
+    aiAnalysis !== null,
+  );
 }
 
 export function toJobCardData(row: JobOfferRow): JobCardData {
