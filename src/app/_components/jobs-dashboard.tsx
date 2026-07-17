@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
 import { useCallback } from "react";
 import { sileo } from "sileo";
+import { friendlyErrorMessage } from "@/lib/error-message";
 import { useTRPC } from "@/trpc/client";
 import { resolveDashboardView } from "./dashboard-state";
 import { DashboardStats } from "./dashboard-stats";
@@ -76,7 +77,7 @@ export function JobsDashboard() {
 
       {view === "error" ? (
         <ErrorState
-          errorMessage={jobs.error?.message ?? ""}
+          errorMessage={friendlyErrorMessage(jobs.error?.message ?? "")}
           onRetry={handleRetry}
         />
       ) : null}
