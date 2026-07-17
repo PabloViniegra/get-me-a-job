@@ -7,8 +7,6 @@ const REQUIRED_BASE = {
   APIFY_API_KEY: "apify-key",
   APIFY_WEBHOOK_SECRET: "webhook-secret",
   APIFY_ADMIN_SECRET: "admin-secret",
-  APIFY_ACTOR_ID: "test/actor",
-  APIFY_SEARCH_INPUT: '{"keyword":"Engineer"}',
 };
 
 describe("parseEnv", () => {
@@ -18,6 +16,9 @@ describe("parseEnv", () => {
     expect(result).toEqual({
       ...REQUIRED_BASE,
       OPENROUTER_MODEL: "meta-llama/llama-3.3-70b-instruct:free",
+      APIFY_ACTOR_ID: undefined,
+      APIFY_SEARCH_INPUT: undefined,
+      CV_TEXT: undefined,
     });
   });
 
@@ -53,6 +54,17 @@ describe("parseEnv", () => {
     expect(result.CV_TEXT).toBeUndefined();
   });
 
+  it("accepts APIFY_ACTOR_ID and APIFY_SEARCH_INPUT when provided", () => {
+    const result = parseEnv({
+      ...REQUIRED_BASE,
+      APIFY_ACTOR_ID: "cheap_scraper/linkedin-job-scraper",
+      APIFY_SEARCH_INPUT: '{"keyword":"Engineer"}',
+    });
+
+    expect(result.APIFY_ACTOR_ID).toBe("cheap_scraper/linkedin-job-scraper");
+    expect(result.APIFY_SEARCH_INPUT).toBe('{"keyword":"Engineer"}');
+  });
+
   it("throws a clear error when a required var is missing", () => {
     expect(() =>
       parseEnv({
@@ -61,7 +73,7 @@ describe("parseEnv", () => {
         APIFY_API_KEY: "apify-key",
       }),
     ).toThrow(
-      "Invalid environment variables: APIFY_WEBHOOK_SECRET, APIFY_ADMIN_SECRET, APIFY_ACTOR_ID, APIFY_SEARCH_INPUT",
+      "Invalid environment variables: APIFY_WEBHOOK_SECRET, APIFY_ADMIN_SECRET",
     );
   });
 });

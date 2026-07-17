@@ -1,8 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const mockConfig = vi.hoisted(() => ({
+  ACTOR_ID: "test/actor" as string,
+  searchInput: {
+    keyword: "Senior Engineer",
+    locations: ["Madrid"],
+  } as Record<string, unknown>,
+}));
+
 vi.mock("@/config/apify", () => ({
-  ACTOR_ID: "test/actor",
-  SEARCH_INPUT: { keyword: "Senior Engineer", locations: ["Madrid"] },
+  get ACTOR_ID() {
+    return mockConfig.ACTOR_ID;
+  },
+  getSearchInput: () => mockConfig.searchInput,
 }));
 
 vi.mock("@/env", () => ({
@@ -27,7 +37,14 @@ function makeMockClient(run: unknown) {
 }
 
 describe("triggerLinkedInScrape", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockConfig.ACTOR_ID = "test/actor";
+    mockConfig.searchInput = {
+      keyword: "Senior Engineer",
+      locations: ["Madrid"],
+    };
+  });
 
   it("starts the configured actor with SEARCH_INPUT by default", async () => {
     const run = makeRun();
@@ -67,6 +84,24 @@ describe("triggerLinkedInScrape", () => {
       keyword: "Other",
       locations: ["Remote"],
     });
+  });
+
+  it("throws a clear error when APIFY_ACTOR_ID is unset", async () => {
+    mockConfig.ACTOR_ID = "";
+    const { actor } = makeMockClient(makeRun());
+
+    await expect(triggerLinkedInScrape({}, { actor } as never)).rejects.toThrow(
+      /APIFY_ACTOR_ID/,
+    );
+  });
+
+  it("throws a clear error when APIFY_SEARCH_INPUT is unset", async () => {
+    mockConfig.searchInput = {};
+    const { actor } = makeMockClient(makeRun());
+
+    await expect(triggerLinkedInScrape({}, { actor } as never)).rejects.toThrow(
+      /APIFY_SEARCH_INPUT/,
+    );
   });
 
   it("propagates errors from apify-client", async () => {

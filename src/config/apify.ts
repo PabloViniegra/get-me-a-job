@@ -1,7 +1,9 @@
 import { env } from "@/env";
 
-export const ACTOR_ID = env.APIFY_ACTOR_ID;
+export const ACTOR_ID = env.APIFY_ACTOR_ID ?? "";
 
-export const SEARCH_INPUT: Record<string, unknown> = JSON.parse(
-  env.APIFY_SEARCH_INPUT,
-) as Record<string, unknown>;
+export function getSearchInput(): Record<string, unknown> {
+  const raw = env.APIFY_SEARCH_INPUT;
+  if (!raw) return {};
+  return JSON.parse(raw) as Record<string, unknown>;
+}

@@ -6,11 +6,14 @@ const envSchema = z.object({
   APIFY_API_KEY: z.string(),
   APIFY_WEBHOOK_SECRET: z.string(),
   APIFY_ADMIN_SECRET: z.string(),
-  APIFY_ACTOR_ID: z.string(),
+  // Apify actor ID for the LinkedIn scrape (e.g. cheap_scraper/linkedin-job-scraper).
+  // Optional so the build succeeds even when not configured; the admin trigger
+  // endpoint surfaces a clear error if it's called without these set.
+  APIFY_ACTOR_ID: z.string().optional(),
   // JSON-encoded input passed to the Apify actor at trigger time.
   // Shape is actor-specific; for cheap_scraper/linkedin-job-scraper see
   // the actor's README.
-  APIFY_SEARCH_INPUT: z.string(),
+  APIFY_SEARCH_INPUT: z.string().optional(),
   OPENROUTER_MODEL: z
     .string()
     .default("meta-llama/llama-3.3-70b-instruct:free"),
