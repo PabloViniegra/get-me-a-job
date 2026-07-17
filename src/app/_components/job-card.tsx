@@ -10,7 +10,13 @@ import { MatchScoreChip } from "./match-score-chip";
 
 type JobCardProps = { data: JobCardData };
 
+const HTTP_URL_PATTERN = /^https?:\/\//;
+
 export function JobCard({ data }: JobCardProps) {
+  const linkedinHref = HTTP_URL_PATTERN.test(data.linkedinUrl)
+    ? data.linkedinUrl
+    : null;
+
   return (
     <Card className="rounded-lg border border-border p-4 transition-colors duration-150 ease-out hover:border-border-secondary">
       <Card.Header className="flex-col items-stretch gap-2">
@@ -63,15 +69,17 @@ export function JobCard({ data }: JobCardProps) {
           {relativeJobTime(data.createdAt)}
         </span>
         <div className="flex items-center gap-2">
-          <Link
-            href={data.linkedinUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs"
-          >
-            <Link.Icon aria-hidden="true" />
-            LinkedIn
-          </Link>
+          {linkedinHref ? (
+            <Link
+              href={linkedinHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs"
+            >
+              <Link.Icon aria-hidden="true" />
+              LinkedIn
+            </Link>
+          ) : null}
           <ChatStubButton />
         </div>
       </Card.Footer>

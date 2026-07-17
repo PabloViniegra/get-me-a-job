@@ -6,7 +6,7 @@ import { MessageCircle } from "lucide-react";
 import { sileo } from "sileo";
 
 export const CHAT_STUB_TITLE = "Chat no disponible aún";
-export const CHAT_STUB_DESCRIPTION = "Disponible en la próxima actualización";
+export const CHAT_STUB_DESCRIPTION = "Pendiente de Epic 4";
 
 export function ChatStubButton() {
   return (
