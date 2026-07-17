@@ -2,6 +2,7 @@
 
 import { Card, Chip } from "@heroui/react";
 import type { JobCardData } from "@/lib/jobs.dto";
+import { ChatStubButton } from "./chat-stub-button";
 import { MatchScoreChip } from "./match-score-chip";
 
 type JobCardProps = { data: JobCardData };
@@ -31,6 +32,9 @@ export function JobCard({ data }: JobCardProps) {
           {data.salary ?? "Not disclosed"}
         </p>
       </Card.Content>
+      <Card.Footer className="flex flex-row justify-end">
+        <ChatStubButton />
+      </Card.Footer>
     </Card>
   );
 }
