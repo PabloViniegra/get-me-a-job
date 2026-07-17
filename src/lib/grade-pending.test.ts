@@ -14,7 +14,7 @@ vi.mock("@/lib/openrouter", () => ({
 }));
 
 import { loadCV } from "@/lib/cv";
-import { gradeJob } from "@/lib/grader";
+import { type GraderFailureReason, gradeJob } from "@/lib/grader";
 import { gradePendingJobs } from "./grade-pending";
 
 type PendingRow = {
@@ -58,6 +58,17 @@ function makePrismaMock(pending: PendingRow[]) {
   } as unknown as PrismaClient;
 }
 
+function gradeOk(value: { score: number; whyItFits: string }) {
+  return { ok: true as const, value };
+}
+
+function gradeFail(reason: GraderFailureReason, detail?: string) {
+  return {
+    ok: false as const,
+    failure: { reason, ...(detail !== undefined ? { detail } : {}) },
+  };
+}
+
 describe("gradePendingJobs", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -65,7 +76,9 @@ describe("gradePendingJobs", () => {
 
   it("returns zero counts when there are no pending jobs", async () => {
     const prisma = makePrismaMock([]);
-    vi.mocked(gradeJob).mockResolvedValue({ score: 80, whyItFits: "ok" });
+    vi.mocked(gradeJob).mockResolvedValue(
+      gradeOk({ score: 80, whyItFits: "ok" }),
+    );
 
     const result = await gradePendingJobs({}, prisma);
 
@@ -85,10 +98,9 @@ describe("gradePendingJobs", () => {
       makePending("b"),
       makePending("c"),
     ]);
-    vi.mocked(gradeJob).mockImplementation(async () => ({
-      score: 88,
-      whyItFits: "Strong match.",
-    }));
+    vi.mocked(gradeJob).mockImplementation(async () =>
+      gradeOk({ score: 88, whyItFits: "Strong match." }),
+    );
 
     const result = await gradePendingJobs({ concurrency: 2 }, prisma);
 
@@ -104,11 +116,11 @@ describe("gradePendingJobs", () => {
     });
   });
 
-  it("records failures when gradeJob returns null", async () => {
+  it("records failures when gradeJob returns failure", async () => {
     const prisma = makePrismaMock([makePending("ok"), makePending("fail")]);
     vi.mocked(gradeJob).mockImplementation(async ({ job }) => {
-      if (job.jobId === "fail") return null;
-      return { score: 70, whyItFits: "ok" };
+      if (job.jobId === "fail") return gradeFail("parse", "raw garbage");
+      return gradeOk({ score: 70, whyItFits: "ok" });
     });
 
     const result = await gradePendingJobs({}, prisma);
@@ -117,7 +129,7 @@ describe("gradePendingJobs", () => {
     expect(result.succeeded).toBe(1);
     expect(result.failed).toBe(1);
     expect(result.errors).toEqual([
-      { jobId: "fail", reason: "grade-returned-null" },
+      { jobId: "fail", reason: "parse", detail: "raw garbage" },
     ]);
     expect(prisma.jobOffer.update).toHaveBeenCalledTimes(1);
     expect(prisma.jobOffer.update).toHaveBeenCalledWith({
@@ -126,18 +138,20 @@ describe("gradePendingJobs", () => {
     });
   });
 
-  it("records failures when gradeJob throws", async () => {
+  it("records failures when gradeJob returns ok=false with a thrown-like reason", async () => {
     const prisma = makePrismaMock([makePending("ok"), makePending("boom")]);
     vi.mocked(gradeJob).mockImplementation(async ({ job }) => {
-      if (job.jobId === "boom") throw new Error("network down");
-      return { score: 60, whyItFits: "partial" };
+      if (job.jobId === "boom") return gradeFail("network", "network down");
+      return gradeOk({ score: 60, whyItFits: "partial" });
     });
 
     const result = await gradePendingJobs({}, prisma);
 
     expect(result.succeeded).toBe(1);
     expect(result.failed).toBe(1);
-    expect(result.errors).toEqual([{ jobId: "boom", reason: "network down" }]);
+    expect(result.errors).toEqual([
+      { jobId: "boom", reason: "network", detail: "network down" },
+    ]);
   });
 
   it("honors the limit option (caps pending after fetch)", async () => {
@@ -146,7 +160,9 @@ describe("gradePendingJobs", () => {
       makePending("b"),
       makePending("c"),
     ]);
-    vi.mocked(gradeJob).mockResolvedValue({ score: 50, whyItFits: "x" });
+    vi.mocked(gradeJob).mockResolvedValue(
+      gradeOk({ score: 50, whyItFits: "x" }),
+    );
 
     const result = await gradePendingJobs({ limit: 2 }, prisma);
 
@@ -156,7 +172,9 @@ describe("gradePendingJobs", () => {
 
   it("uses the cvText from loadCV", async () => {
     const prisma = makePrismaMock([makePending("a")]);
-    vi.mocked(gradeJob).mockResolvedValue({ score: 50, whyItFits: "x" });
+    vi.mocked(gradeJob).mockResolvedValue(
+      gradeOk({ score: 50, whyItFits: "x" }),
+    );
     vi.mocked(loadCV).mockResolvedValue("the-cv-text");
 
     await gradePendingJobs({}, prisma);

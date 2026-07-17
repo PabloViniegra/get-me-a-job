@@ -3,6 +3,7 @@ import { env } from "@/env";
 import { apifyClient } from "@/lib/apify";
 import type { ApifyLinkedInJobItem } from "@/lib/apify-mapper";
 import { mapApifyItemToJobOffer } from "@/lib/apify-mapper";
+import { isBearerAuthorized } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 type ApifyWebhookPayload = {
@@ -13,9 +14,7 @@ type ApifyWebhookPayload = {
 };
 
 export async function POST(request: Request) {
-  const authHeader = request.headers.get("Authorization");
-
-  if (authHeader !== `Bearer ${env.APIFY_WEBHOOK_SECRET}`) {
+  if (!isBearerAuthorized(request, env.APIFY_WEBHOOK_SECRET)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

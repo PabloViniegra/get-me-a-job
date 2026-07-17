@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import type { JobOfferInput } from "@/lib/job";
 
 // Output shape for `cheap_scraper/linkedin-job-scraper`.
 // https://apify.com/cheap_scraper/linkedin-job-scraper
@@ -9,17 +10,6 @@ export type ApifyLinkedInJobItem = {
   jobDescription?: string;
   salaryInfo?: string[];
   location?: string;
-};
-
-export type JobOfferInput = {
-  jobId: string;
-  title: string;
-  linkedinUrl: string;
-  description: string;
-  salary: string | null;
-  format: string;
-  requirements: string[];
-  descriptionHash: string;
 };
 
 export function mapApifyItemToJobOffer(

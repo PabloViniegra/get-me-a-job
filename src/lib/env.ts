@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+export const DEFAULT_OPENROUTER_MODEL =
+  "meta-llama/llama-3.3-70b-instruct:free";
+
 const envSchema = z.object({
   DATABASE_URL: z.string(),
   ROUTER_API_KEY: z.string(),
@@ -14,9 +17,7 @@ const envSchema = z.object({
   // Shape is actor-specific; for cheap_scraper/linkedin-job-scraper see
   // the actor's README.
   APIFY_SEARCH_INPUT: z.string().optional(),
-  OPENROUTER_MODEL: z
-    .string()
-    .default("meta-llama/llama-3.3-70b-instruct:free"),
+  OPENROUTER_MODEL: z.string().default(DEFAULT_OPENROUTER_MODEL),
   // Base64-encoded CV plain text. Required in environments where the
   // cv/ directory isn't deployed (Vercel). Falls back to fs read in dev.
   CV_TEXT: z.string().optional(),

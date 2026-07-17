@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { env } from "@/env";
+import { isBearerAuthorized } from "@/lib/auth";
 import { gradePendingJobs } from "@/lib/grade-pending";
 
 type GradeRequestBody = {
@@ -8,9 +9,7 @@ type GradeRequestBody = {
 };
 
 export async function POST(request: Request) {
-  const authHeader = request.headers.get("Authorization");
-
-  if (authHeader !== `Bearer ${env.APIFY_ADMIN_SECRET}`) {
+  if (!isBearerAuthorized(request, env.APIFY_ADMIN_SECRET)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

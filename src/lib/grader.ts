@@ -1,20 +1,9 @@
 import { z } from "zod";
-import type { OpenRouterClient } from "./openrouter";
+import { DEFAULT_OPENROUTER_MODEL } from "@/lib/env";
+import type { AiAnalysis, JobSnapshot } from "@/lib/job";
+import type { OpenRouterClient } from "@/lib/openrouter";
 
-export type AiAnalysis = {
-  score: number;
-  whyItFits: string;
-};
-
-export type JobSnapshot = {
-  jobId: string;
-  title: string;
-  linkedinUrl: string;
-  description: string;
-  salary: string | null;
-  format: string;
-  requirements: string[];
-};
+export type { AiAnalysis, JobSnapshot };
 
 export type GraderFailureReason =
   | "network"
@@ -22,11 +11,19 @@ export type GraderFailureReason =
   | "parse"
   | "validation";
 
+export type GraderFailure = {
+  reason: GraderFailureReason;
+  detail?: string;
+};
+
+export type GraderResult =
+  | { ok: true; value: AiAnalysis }
+  | { ok: false; failure: GraderFailure };
+
 export type GraderInputs = {
   client: OpenRouterClient;
   cvText: string;
   job: JobSnapshot;
-  onFailure?: (reason: GraderFailureReason, detail?: string) => void;
 };
 
 const aiAnalysisSchema = z.object({
@@ -34,12 +31,12 @@ const aiAnalysisSchema = z.object({
   whyItFits: z.string().max(1500),
 });
 
-const DEFAULT_MODEL = "meta-llama/llama-3.3-70b-instruct:free";
 const GRADING_TIMEOUT_MS = 30_000;
 const MAX_GRADE_ATTEMPTS = 3;
 const RETRY_DELAY_BASE_MS = 2000;
 
 export type GradeOptions = {
+  model?: string;
   sleep?: (ms: number) => Promise<void>;
 };
 
@@ -61,10 +58,10 @@ const PROMPT_TEMPLATE = [
 
 export async function gradeJob(
   inputs: GraderInputs,
-  model: string = DEFAULT_MODEL,
   options: GradeOptions = {},
-): Promise<AiAnalysis | null> {
+): Promise<GraderResult> {
   const { cvText, job } = inputs;
+  const model = options.model ?? DEFAULT_OPENROUTER_MODEL;
   const start = performance.now();
   console.info(
     `[grading] start jobId=${job.jobId} model=${model} cvLen=${cvText.length}`,
@@ -75,66 +72,66 @@ export async function gradeJob(
     formatJob(job),
   );
 
-  const raw = await callWithRetry({
+  const callResult = await callWithRetry({
+    client: inputs.client,
     prompt,
     job,
     model,
-    inputs,
+    cvLen: cvText.length,
     sleep: options.sleep ?? defaultSleep,
   });
-  if (raw === null) return null;
+  if (!callResult.ok) return callResult;
 
   let parsed: unknown;
   try {
-    parsed = JSON.parse(extractJsonObject(raw));
+    parsed = JSON.parse(extractJsonObject(callResult.raw));
   } catch {
-    const detail = `rawLen=${raw.length} rawStart=${raw.slice(0, 80)}`;
+    const detail = `rawLen=${callResult.raw.length} rawStart=${callResult.raw.slice(0, 80)}`;
     console.info(`[grading] error jobId=${job.jobId} reason=parse ${detail}`);
-    inputs.onFailure?.("parse", detail);
-    return null;
+    return { ok: false, failure: { reason: "parse", detail } };
   }
 
-  const result = aiAnalysisSchema.safeParse(parsed);
-  if (!result.success) {
-    const detail = JSON.stringify(result.error.issues);
+  const validation = aiAnalysisSchema.safeParse(parsed);
+  if (!validation.success) {
+    const detail = JSON.stringify(validation.error.issues);
     console.info(
       `[grading] error jobId=${job.jobId} reason=validation issues=${detail}`,
     );
-    inputs.onFailure?.("validation", detail);
-    return null;
+    return { ok: false, failure: { reason: "validation", detail } };
   }
 
   const dur = Math.round(performance.now() - start);
   console.info(
-    `[grading] ok jobId=${job.jobId} model=${model} cvLen=${cvText.length} score=${result.data.score} dur=${dur}`,
+    `[grading] ok jobId=${job.jobId} model=${model} cvLen=${cvText.length} score=${validation.data.score} dur=${dur}`,
   );
-  return result.data;
+  return { ok: true, value: validation.data };
 }
 
 async function callWithRetry(args: {
+  client: OpenRouterClient;
   prompt: string;
   job: JobSnapshot;
   model: string;
-  inputs: GraderInputs;
+  cvLen: number;
   sleep: (ms: number) => Promise<void>;
-}): Promise<string | null> {
-  const { prompt, job, model, inputs, sleep } = args;
+}): Promise<{ ok: true; raw: string } | { ok: false; failure: GraderFailure }> {
+  const { client, prompt, job, model, cvLen, sleep } = args;
   for (let attempt = 1; attempt <= MAX_GRADE_ATTEMPTS; attempt++) {
     const signal = AbortSignal.timeout(GRADING_TIMEOUT_MS);
     try {
-      return await inputs.client.complete(prompt, { signal });
+      const raw = await client.complete(prompt, { signal });
+      return { ok: true, raw };
     } catch (err) {
       const errStatus = (err as { status?: unknown })?.status;
       const isLastAttempt = attempt === MAX_GRADE_ATTEMPTS;
+      const reason =
+        signal.aborted || isAbortError(err) ? "timeout" : "network";
+      const detail = (err as Error)?.message ?? String(err);
+      console.info(
+        `[grading] error jobId=${job.jobId} model=${model} cvLen=${cvLen} reason=${reason} detail=${detail}`,
+      );
       if (errStatus !== 429 || isLastAttempt) {
-        const reason =
-          signal.aborted || isAbortError(err) ? "timeout" : "network";
-        const detail = (err as Error)?.message ?? String(err);
-        console.info(
-          `[grading] error jobId=${job.jobId} model=${model} cvLen=${inputs.cvText.length} reason=${reason} detail=${detail}`,
-        );
-        inputs.onFailure?.(reason, detail);
-        return null;
+        return { ok: false, failure: { reason, detail } };
       }
       const delayMs = RETRY_DELAY_BASE_MS * 2 ** (attempt - 1);
       console.info(
@@ -143,7 +140,10 @@ async function callWithRetry(args: {
       await sleep(delayMs);
     }
   }
-  return null;
+  return {
+    ok: false,
+    failure: { reason: "network", detail: "retry budget exhausted" },
+  };
 }
 
 function isAbortError(err: unknown): boolean {

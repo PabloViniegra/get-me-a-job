@@ -1,10 +1,10 @@
-import { env } from "@/env";
+import { DEFAULT_OPENROUTER_MODEL, env } from "@/env";
+import { cachedClient } from "@/lib/cache";
 
 export type OpenRouterClient = {
   complete(prompt: string, opts?: { signal?: AbortSignal }): Promise<string>;
 };
 
-const DEFAULT_OPENROUTER_MODEL = "meta-llama/llama-3.3-70b-instruct:free";
 const OPENROUTER_CHAT_COMPLETIONS_URL =
   "https://openrouter.ai/api/v1/chat/completions";
 
@@ -12,7 +12,8 @@ export function createOpenRouterClient(config: {
   apiKey: string;
   model?: string;
 }): OpenRouterClient {
-  const model = config.model ?? DEFAULT_OPENROUTER_MODEL;
+  const model =
+    config.model ?? env.OPENROUTER_MODEL ?? DEFAULT_OPENROUTER_MODEL;
   return {
     async complete(prompt, opts) {
       const response = await fetch(OPENROUTER_CHAT_COMPLETIONS_URL, {
@@ -43,17 +44,9 @@ export function createOpenRouterClient(config: {
   };
 }
 
-const globalForOpenRouter = globalThis as unknown as {
-  openRouterClient: OpenRouterClient | undefined;
-};
-
-export const openRouterClient =
-  globalForOpenRouter.openRouterClient ??
+export const openRouterClient = cachedClient("openRouterClient", () =>
   createOpenRouterClient({
     apiKey: env.ROUTER_API_KEY,
     model: env.OPENROUTER_MODEL,
-  });
-
-if (process.env.NODE_ENV !== "production") {
-  globalForOpenRouter.openRouterClient = openRouterClient;
-}
+  }),
+);

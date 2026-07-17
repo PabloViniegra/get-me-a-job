@@ -82,20 +82,21 @@ async function main() {
     });
     const elapsed = Date.now() - t0;
 
-    if (!result) {
+    if (!result.ok) {
       console.log(
-        `[smoke] gradeJob returned null after ${elapsed}ms — see [grading] logs above`,
+        `[smoke] gradeJob failed reason=${result.failure.reason} detail=${result.failure.detail ?? ""}`,
       );
     } else {
+      const ai = result.value;
       console.log(`[smoke] gradeJob succeeded in ${elapsed}ms`);
       console.log(
-        `[smoke]   score=${result.score} whyItFits.length=${result.whyItFits.length} preview="${result.whyItFits.slice(0, 100).replace(/\n/g, " ")}..."`,
+        `[smoke]   score=${ai.score} whyItFits.length=${ai.whyItFits.length} preview="${ai.whyItFits.slice(0, 100).replace(/\n/g, " ")}..."`,
       );
 
       console.log("[smoke] step 5: persist aiAnalysis");
       await prisma.jobOffer.update({
         where: { jobId: mapped.jobId },
-        data: { aiAnalysis: result },
+        data: { aiAnalysis: ai },
       });
       console.log("[smoke] aiAnalysis persisted");
     }

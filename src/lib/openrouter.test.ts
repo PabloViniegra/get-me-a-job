@@ -23,6 +23,7 @@ afterEach(() => {
 
 function mockEnv(overrides: Record<string, string | undefined> = {}) {
   vi.doMock("@/env", () => ({
+    DEFAULT_OPENROUTER_MODEL: "meta-llama/llama-3.3-70b-instruct:free",
     env: {
       DATABASE_URL: "mongodb://localhost:27017/test",
       ROUTER_API_KEY: "test-router-key",

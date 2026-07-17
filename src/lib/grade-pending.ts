@@ -1,9 +1,9 @@
 import type { PrismaClient } from "@prisma/client";
-import { loadCV } from "./cv";
-import type { AiAnalysis, JobSnapshot } from "./grader";
-import { gradeJob } from "./grader";
-import { openRouterClient } from "./openrouter";
-import { prisma as defaultPrisma } from "./prisma";
+import { loadCV } from "@/lib/cv";
+import { gradeJob } from "@/lib/grader";
+import type { JobSnapshot } from "@/lib/job";
+import { openRouterClient } from "@/lib/openrouter";
+import { prisma as defaultPrisma } from "@/lib/prisma";
 
 export type GradePendingOptions = {
   limit?: number;
@@ -86,46 +86,31 @@ export async function gradePendingJobs(
 
   for (let i = 0; i < pending.length; i += concurrency) {
     const batch = pending.slice(i, i + concurrency);
-    const results = await Promise.allSettled(
+    const results = await Promise.all(
       batch.map(async (row) => {
-        const failure: { reason?: string; detail?: string } = {};
         const result = await gradeJob({
           client: openRouterClient,
           cvText,
           job: toJobSnapshot(row),
-          onFailure: (reason, detail) => {
-            failure.reason = reason;
-            failure.detail = detail;
-          },
         });
-        if (!result) {
-          const err = new Error(failure.reason ?? "grade-returned-null");
-          (err as Error & { detail?: string }).detail = failure.detail;
-          throw err;
-        }
-        return result;
+        return { row, result };
       }),
     );
 
-    for (let j = 0; j < results.length; j++) {
-      const settled = results[j];
-      const row = batch[j];
-      if (settled.status === "fulfilled") {
-        const analysis: AiAnalysis = settled.value;
-        await prismaOverride.jobOffer.update({
-          where: { jobId: row.jobId },
-          data: { aiAnalysis: analysis },
-        });
-        succeeded += 1;
-      } else {
-        const e = settled.reason as Error & { detail?: string };
-        const reason = e?.message ?? "grade-returned-null";
+    for (const { row, result } of results) {
+      if (!result.ok) {
         errors.push({
           jobId: row.jobId,
-          reason,
-          detail: e?.detail,
+          reason: result.failure.reason,
+          detail: result.failure.detail,
         });
+        continue;
       }
+      await prismaOverride.jobOffer.update({
+        where: { jobId: row.jobId },
+        data: { aiAnalysis: result.value },
+      });
+      succeeded += 1;
     }
   }
 

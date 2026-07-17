@@ -1,17 +1,6 @@
-import { ApifyClient } from "apify-client";
+import type { ApifyClient } from "apify-client";
 import { ACTOR_ID, getSearchInput } from "@/config/apify";
-import { env } from "@/env";
-
-const globalForApify = globalThis as unknown as {
-  apifyClient: ApifyClient | undefined;
-};
-
-export const apifyClient =
-  globalForApify.apifyClient ?? new ApifyClient({ token: env.APIFY_API_KEY });
-
-if (process.env.NODE_ENV !== "production") {
-  globalForApify.apifyClient = apifyClient;
-}
+import { apifyClient as defaultApifyClient } from "@/lib/apify";
 
 export type TriggerOptions = {
   actorId?: string;
@@ -26,7 +15,7 @@ export type TriggerResult = {
 
 export async function triggerLinkedInScrape(
   options: TriggerOptions = {},
-  client: ApifyClient = apifyClient,
+  client: ApifyClient = defaultApifyClient,
 ): Promise<TriggerResult> {
   const actorId = options.actorId ?? ACTOR_ID;
   if (!actorId) {

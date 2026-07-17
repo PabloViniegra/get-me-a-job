@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { GraderResult } from "./grader";
 import { gradeJob, type JobSnapshot } from "./grader";
 
 const JOB: JobSnapshot = {
@@ -17,6 +18,20 @@ function logText(spy: ReturnType<typeof vi.spyOn>): string {
   return spy.mock.calls
     .map((call: readonly unknown[]) => call[0] as string)
     .join("\n");
+}
+
+function expectOk(
+  result: GraderResult,
+): asserts result is { ok: true; value: { score: number; whyItFits: string } } {
+  expect(result.ok).toBe(true);
+}
+
+function expectFailure(
+  result: GraderResult,
+  reason: "network" | "timeout" | "parse" | "validation",
+): void {
+  expect(result.ok).toBe(false);
+  if (!result.ok) expect(result.failure.reason).toBe(reason);
 }
 
 describe("gradeJob", () => {
@@ -42,7 +57,8 @@ describe("gradeJob", () => {
       job: JOB,
     });
 
-    expect(result).toEqual({
+    expectOk(result);
+    expect(result.value).toEqual({
       score: 87,
       whyItFits: "Strong TypeScript match.",
     });
@@ -53,7 +69,7 @@ describe("gradeJob", () => {
     expect(log).toContain("score=87");
   });
 
-  it("returns null with reason=parse when the client returns malformed JSON", async () => {
+  it("returns failure with reason=parse when the client returns malformed JSON", async () => {
     const complete = vi.fn().mockResolvedValue("not json at all");
     const result = await gradeJob({
       client: { complete },
@@ -61,7 +77,7 @@ describe("gradeJob", () => {
       job: JOB,
     });
 
-    expect(result).toBeNull();
+    expectFailure(result, "parse");
     expect(logText(infoSpy)).toContain("reason=parse");
   });
 
@@ -79,7 +95,8 @@ describe("gradeJob", () => {
       job: JOB,
     });
 
-    expect(result).toEqual({ score: 88, whyItFits: "Strong match." });
+    expectOk(result);
+    expect(result.value).toEqual({ score: 88, whyItFits: "Strong match." });
   });
 
   it("strips trailing prose after the JSON object", async () => {
@@ -94,7 +111,8 @@ describe("gradeJob", () => {
       job: JOB,
     });
 
-    expect(result).toEqual({ score: 72, whyItFits: "Decent." });
+    expectOk(result);
+    expect(result.value).toEqual({ score: 72, whyItFits: "Decent." });
   });
 
   it("strips both preamble and trailing prose around the JSON object", async () => {
@@ -109,7 +127,8 @@ describe("gradeJob", () => {
       job: JOB,
     });
 
-    expect(result).toEqual({ score: 91, whyItFits: "Excellent." });
+    expectOk(result);
+    expect(result.value).toEqual({ score: 91, whyItFits: "Excellent." });
   });
 
   it("strips a markdown json code fence around the JSON object", async () => {
@@ -124,10 +143,11 @@ describe("gradeJob", () => {
       job: JOB,
     });
 
-    expect(result).toEqual({ score: 65, whyItFits: "Ok." });
+    expectOk(result);
+    expect(result.value).toEqual({ score: 65, whyItFits: "Ok." });
   });
 
-  it("returns null with reason=validation when required fields are missing", async () => {
+  it("returns failure with reason=validation when required fields are missing", async () => {
     const complete = vi.fn().mockResolvedValue(JSON.stringify({}));
     const result = await gradeJob({
       client: { complete },
@@ -135,11 +155,11 @@ describe("gradeJob", () => {
       job: JOB,
     });
 
-    expect(result).toBeNull();
+    expectFailure(result, "validation");
     expect(logText(infoSpy)).toContain("reason=validation");
   });
 
-  it("returns null with reason=validation when score is out of range", async () => {
+  it("returns failure with reason=validation when score is out of range", async () => {
     const complete = vi
       .fn()
       .mockResolvedValue(JSON.stringify({ score: 150, whyItFits: "too good" }));
@@ -149,11 +169,11 @@ describe("gradeJob", () => {
       job: JOB,
     });
 
-    expect(result).toBeNull();
+    expectFailure(result, "validation");
     expect(logText(infoSpy)).toContain("reason=validation");
   });
 
-  it("returns null with reason=validation when whyItFits exceeds 1500 chars", async () => {
+  it("returns failure with reason=validation when whyItFits exceeds 1500 chars", async () => {
     const complete = vi
       .fn()
       .mockResolvedValue(
@@ -165,11 +185,11 @@ describe("gradeJob", () => {
       job: JOB,
     });
 
-    expect(result).toBeNull();
+    expectFailure(result, "validation");
     expect(logText(infoSpy)).toContain("reason=validation");
   });
 
-  it("returns null with reason=network when the client throws", async () => {
+  it("returns failure with reason=network when the client throws", async () => {
     const complete = vi.fn().mockRejectedValue(new Error("network down"));
     const result = await gradeJob({
       client: { complete },
@@ -177,11 +197,11 @@ describe("gradeJob", () => {
       job: JOB,
     });
 
-    expect(result).toBeNull();
+    expectFailure(result, "network");
     expect(logText(infoSpy)).toContain("reason=network");
   });
 
-  it("returns null with reason=timeout when the abort signal fires mid-call", async () => {
+  it("returns failure with reason=timeout when the abort signal fires mid-call", async () => {
     const stubController = new AbortController();
     const complete = vi.fn().mockImplementation(
       (_prompt: string, opts?: { signal?: AbortSignal }) =>
@@ -201,7 +221,7 @@ describe("gradeJob", () => {
       job: JOB,
     });
 
-    expect(result).toBeNull();
+    expectFailure(result, "timeout");
     expect(logText(infoSpy)).toContain("reason=timeout");
   });
 
@@ -222,13 +242,13 @@ describe("gradeJob", () => {
 
     const result = await gradeJob(
       { client: { complete }, cvText: CV_TEXT, job: JOB },
-      undefined,
       { sleep },
     );
 
     expect(complete).toHaveBeenCalledTimes(2);
     expect(sleep).toHaveBeenCalledTimes(1);
-    expect(result).toEqual({ score: 88, whyItFits: "Strong TS match." });
+    expectOk(result);
+    expect(result.value).toEqual({ score: 88, whyItFits: "Strong TS match." });
   });
 
   it("retries twice on HTTP 429 and succeeds on the 3rd attempt (A6)", async () => {
@@ -249,16 +269,16 @@ describe("gradeJob", () => {
 
     const result = await gradeJob(
       { client: { complete }, cvText: CV_TEXT, job: JOB },
-      undefined,
       { sleep },
     );
 
     expect(complete).toHaveBeenCalledTimes(3);
     expect(sleep).toHaveBeenCalledTimes(2);
-    expect(result).toEqual({ score: 91, whyItFits: "Excellent." });
+    expectOk(result);
+    expect(result.value).toEqual({ score: 91, whyItFits: "Excellent." });
   });
 
-  it("returns null with reason=network after exhausting 3 attempts on persistent 429 (A6)", async () => {
+  it("returns failure with reason=network after exhausting 3 attempts on persistent 429 (A6)", async () => {
     const tooManyRequests = (): Error & { status?: number } => {
       const e = new Error("OpenRouter request failed: 429") as Error & {
         status?: number;
@@ -275,12 +295,11 @@ describe("gradeJob", () => {
 
     const result = await gradeJob(
       { client: { complete }, cvText: CV_TEXT, job: JOB },
-      undefined,
       { sleep },
     );
 
     expect(complete).toHaveBeenCalledTimes(3);
-    expect(result).toBeNull();
+    expectFailure(result, "network");
     expect(logText(infoSpy)).toContain("reason=network");
   });
 
@@ -294,13 +313,12 @@ describe("gradeJob", () => {
 
     const result = await gradeJob(
       { client: { complete }, cvText: CV_TEXT, job: JOB },
-      undefined,
       { sleep },
     );
 
     expect(complete).toHaveBeenCalledTimes(1);
     expect(sleep).not.toHaveBeenCalled();
-    expect(result).toBeNull();
+    expectFailure(result, "network");
     expect(logText(infoSpy)).toContain("reason=network");
   });
 
@@ -321,7 +339,6 @@ describe("gradeJob", () => {
 
     await gradeJob(
       { client: { complete }, cvText: CV_TEXT, job: JOB },
-      undefined,
       { sleep },
     );
 
