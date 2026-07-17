@@ -1,35 +1,62 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
 import { useTRPC } from "@/trpc/client";
+import { resolveDashboardView } from "./dashboard-state";
+import { EmptyState } from "./empty-state";
+import { ErrorState } from "./error-state";
 import { JobCard } from "./job-card";
+import { JobCardSkeleton } from "./job-card-skeleton";
+
+const SKELETON_COUNT = 4;
+const SKELETON_KEYS = Array.from(
+  { length: SKELETON_COUNT },
+  (_, i) => `skeleton-${i}`,
+);
 
 export function JobsDashboard() {
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const jobs = useQuery(trpc.jobs.list.queryOptions());
 
-  if (jobs.isPending) {
+  const handleRetry = useCallback(() => {
+    void queryClient.invalidateQueries(trpc.jobs.list.queryFilter());
+  }, [queryClient, trpc]);
+
+  const view = resolveDashboardView({
+    isPending: jobs.isPending,
+    isError: jobs.isError,
+    dataLength: jobs.data?.length ?? 0,
+  });
+
+  if (view === "loading") {
     return (
       <ul className="flex w-full max-w-2xl flex-col gap-2 p-4">
-        <li className="h-6 w-48 animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
+        {SKELETON_KEYS.map((key) => (
+          <li key={key}>
+            <JobCardSkeleton />
+          </li>
+        ))}
       </ul>
     );
   }
 
-  if (jobs.isError) {
+  if (view === "error") {
     return (
-      <p className="p-4 text-sm text-red-600 dark:text-red-400">
-        Failed to load jobs: {jobs.error.message}
-      </p>
+      <ErrorState
+        errorMessage={jobs.error?.message ?? ""}
+        onRetry={handleRetry}
+      />
     );
   }
 
-  if (jobs.data.length === 0) {
-    return (
-      <p className="p-4 text-sm text-zinc-600 dark:text-zinc-400">
-        No jobs ingested yet.
-      </p>
-    );
+  if (view === "empty") {
+    return <EmptyState onRetry={handleRetry} />;
+  }
+
+  if (!jobs.data) {
+    return null;
   }
 
   return (
