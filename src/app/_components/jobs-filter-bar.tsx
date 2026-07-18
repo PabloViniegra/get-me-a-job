@@ -4,6 +4,7 @@ import { Button, Input, Label, TextField, ToggleButton } from "@heroui/react";
 import { useState } from "react";
 import type { Format } from "@/lib/dashboard-filters";
 import type { ScoreTier } from "@/lib/score-tier";
+import { TIER_LABELS } from "@/lib/score-tier";
 
 type JobsFilterBarProps = {
   value: string;
@@ -19,11 +20,11 @@ type JobsFilterBarProps = {
 
 const FORMAT_OPTIONS: ReadonlyArray<Format> = ["Remote", "Hybrid", "On-site"];
 
-const TIER_OPTIONS: ReadonlyArray<{ tier: ScoreTier; label: string }> = [
-  { tier: "excellent", label: "Excelente" },
-  { tier: "worth", label: "Vale la pena" },
-  { tier: "low", label: "Bajo" },
-  { tier: "pending", label: "Sin analizar" },
+const TIER_OPTIONS: ReadonlyArray<ScoreTier> = [
+  "excellent",
+  "worth",
+  "low",
+  "pending",
 ];
 
 export function JobsFilterBar({
@@ -110,16 +111,16 @@ export function JobsFilterBar({
           </fieldset>
           <fieldset className="flex flex-wrap items-center gap-2 border-0 p-0 m-0">
             <legend className="sr-only">Filtrar por tier</legend>
-            {TIER_OPTIONS.map(({ tier, label }) => (
+            {TIER_OPTIONS.map((tier) => (
               <ToggleButton
                 key={tier}
                 size="sm"
                 variant="ghost"
                 isSelected={tiers.includes(tier)}
                 onChange={() => onToggleTier(tier)}
-                aria-label={`Filtrar por ${label}`}
+                aria-label={`Filtrar por ${TIER_LABELS[tier]}`}
               >
-                {label}
+                {TIER_LABELS[tier]}
               </ToggleButton>
             ))}
           </fieldset>

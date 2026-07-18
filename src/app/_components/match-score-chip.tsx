@@ -3,15 +3,13 @@
 import { Chip } from "@heroui/react";
 import { Sparkles } from "lucide-react";
 import type { JSX } from "react";
-import { type ScoreTier, scoreTier } from "@/lib/score-tier";
+import { type ScoreTier, scoreTier, TIER_LABELS } from "@/lib/score-tier";
 
 export type ChipClasses = {
   container: string;
   icon: string;
   text: string;
 };
-
-const PENDING_LABEL = "Sin analizar";
 
 export function chipClassForTier(tier: ScoreTier): ChipClasses {
   switch (tier) {
@@ -60,7 +58,7 @@ export function MatchScoreChip({
   if (tier === "pending") {
     return (
       <span className={classes.container} title="Aún sin analizar">
-        {PENDING_LABEL}
+        {TIER_LABELS.pending}
       </span>
     );
   }
@@ -91,7 +89,7 @@ export function MatchScoreChip({
     >
       {leading}
       {tier === "excellent" ? (
-        <span className="text-xs font-medium">Excelente</span>
+        <span className="text-xs font-medium">{TIER_LABELS.excellent}</span>
       ) : null}
       <span className={classes.text}>{score}</span>
     </Chip>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type ScoreTier, scoreTier } from "./score-tier";
+import { type ScoreTier, scoreTier, TIER_LABELS } from "./score-tier";
 
 describe("scoreTier", () => {
   describe("boundaries (PRD FR-3.4 / DESIGN-SYSTEM §Match Score Chip)", () => {
@@ -83,5 +83,19 @@ describe("scoreTier", () => {
     }
     tiers.add(scoreTier(null, false));
     expect(tiers.size).toBe(4);
+  });
+});
+
+describe("TIER_LABELS", () => {
+  it("covers every ScoreTier with a non-empty label", () => {
+    const tiers: ReadonlyArray<ScoreTier> = [
+      "excellent",
+      "worth",
+      "low",
+      "pending",
+    ];
+    for (const t of tiers) {
+      expect(TIER_LABELS[t]).toBeTruthy();
+    }
   });
 });

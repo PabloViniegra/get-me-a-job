@@ -1,6 +1,7 @@
 "use no memo";
 
 import { Separator } from "@heroui/react";
+import { TIER_LABELS } from "@/lib/score-tier";
 import { deriveDashboardCounts } from "./dashboard-stats.helpers";
 
 export { deriveDashboardCounts };
@@ -41,9 +42,12 @@ export function DashboardStats({ jobs }: DashboardStatsProps) {
     >
       <StatCell value={String(counts.total)} label="Ofertas" />
       <Separator orientation="vertical" className="self-stretch" />
-      <StatCell value={String(counts.excellent)} label="Excelentes" />
+      <StatCell
+        value={String(counts.excellent)}
+        label={`${TIER_LABELS.excellent}s`}
+      />
       <Separator orientation="vertical" className="self-stretch" />
-      <StatCell value={String(counts.pending)} label="Sin analizar" />
+      <StatCell value={String(counts.pending)} label={TIER_LABELS.pending} />
     </section>
   );
 }
