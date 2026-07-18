@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto";
 import type { JobOfferInput } from "@/lib/job";
 
+const HTTP_URL_PATTERN = /^https?:\/\//;
+
 // Output shape for `cheap_scraper/linkedin-job-scraper`.
 // https://apify.com/cheap_scraper/linkedin-job-scraper
 export type ApifyLinkedInJobItem = {
@@ -15,6 +17,9 @@ export type ApifyLinkedInJobItem = {
 export function mapApifyItemToJobOffer(
   item: ApifyLinkedInJobItem,
 ): JobOfferInput {
+  if (!HTTP_URL_PATTERN.test(item.jobUrl)) {
+    throw new Error(`linkedinUrl is not http(s) (jobId=${item.jobId})`);
+  }
   const description = item.jobDescription ?? "";
 
   return {
