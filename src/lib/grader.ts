@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { DEFAULT_OPENROUTER_MODEL } from "@/lib/env";
 import type { AiAnalysis, JobSnapshot } from "@/lib/job";
+import { log } from "@/lib/log";
 import type { OpenRouterClient } from "@/lib/openrouter";
 
 export type { AiAnalysis, JobSnapshot };
@@ -63,7 +64,7 @@ export async function gradeJob(
   const { cvText, job } = inputs;
   const model = options.model ?? DEFAULT_OPENROUTER_MODEL;
   const start = performance.now();
-  console.info(
+  log.info(
     `[grading] start jobId=${job.jobId} model=${model} cvLen=${cvText.length}`,
   );
 
@@ -87,21 +88,21 @@ export async function gradeJob(
     parsed = JSON.parse(extractJsonObject(callResult.raw));
   } catch {
     const detail = `rawLen=${callResult.raw.length} rawStart=${callResult.raw.slice(0, 80)}`;
-    console.info(`[grading] error jobId=${job.jobId} reason=parse ${detail}`);
+    log.info(`[grading] error jobId=${job.jobId} reason=parse ${detail}`);
     return { ok: false, failure: { reason: "parse", detail } };
   }
 
   const validation = aiAnalysisSchema.safeParse(parsed);
   if (!validation.success) {
     const detail = JSON.stringify(validation.error.issues);
-    console.info(
+    log.info(
       `[grading] error jobId=${job.jobId} reason=validation issues=${detail}`,
     );
     return { ok: false, failure: { reason: "validation", detail } };
   }
 
   const dur = Math.round(performance.now() - start);
-  console.info(
+  log.info(
     `[grading] ok jobId=${job.jobId} model=${model} cvLen=${cvText.length} score=${validation.data.score} dur=${dur}`,
   );
   return { ok: true, value: validation.data };
@@ -127,14 +128,14 @@ async function callWithRetry(args: {
       const reason =
         signal.aborted || isAbortError(err) ? "timeout" : "network";
       const detail = (err as Error)?.message ?? String(err);
-      console.info(
+      log.info(
         `[grading] error jobId=${job.jobId} model=${model} cvLen=${cvLen} reason=${reason} detail=${detail}`,
       );
       if (errStatus !== 429 || isLastAttempt) {
         return { ok: false, failure: { reason, detail } };
       }
       const delayMs = RETRY_DELAY_BASE_MS * 2 ** (attempt - 1);
-      console.info(
+      log.info(
         `[grading] retry jobId=${job.jobId} attempt=${attempt} delayMs=${delayMs}`,
       );
       await sleep(delayMs);

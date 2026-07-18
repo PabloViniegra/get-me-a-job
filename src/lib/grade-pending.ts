@@ -2,6 +2,7 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import { loadCV } from "@/lib/cv";
 import { gradeJob } from "@/lib/grader";
 import type { JobSnapshot } from "@/lib/job";
+import { log } from "@/lib/log";
 import { openRouterClient } from "@/lib/openrouter";
 import { prisma as defaultPrisma } from "@/lib/prisma";
 
@@ -86,14 +87,12 @@ export async function gradePendingJobs(
   );
   const now = (options.now ?? (() => new Date()))();
 
-  console.info(
-    `[grade-pending] ENTRY limit=${limit} concurrency=${concurrency}`,
-  );
+  log.info(`[grade-pending] ENTRY limit=${limit} concurrency=${concurrency}`);
 
   const cvText = await loadCV();
   const claims = await claimPendingJobs(prismaOverride, limit, now);
 
-  console.info(
+  log.info(
     `[grade-pending] considered=${claims.considered} claimed=${claims.jobs.length} skipped=${claims.skipped}`,
   );
 
