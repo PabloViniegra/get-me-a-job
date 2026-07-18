@@ -1,6 +1,15 @@
 "use client";
 
-import { Button, Input, Label, TextField, ToggleButton } from "@heroui/react";
+import {
+  Button,
+  Input,
+  Label,
+  Separator,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+} from "@heroui/react";
+import { ChevronDown, X } from "lucide-react";
 import { useState } from "react";
 import { FORMAT_VALUES, type Format } from "@/lib/dashboard-filters";
 import { type ScoreTier, TIER_LABELS, TIER_VALUES } from "@/lib/score-tier";
@@ -16,6 +25,66 @@ type JobsFilterBarProps = {
   activeFacetCount: number;
   onClearAll: () => void;
 };
+
+type FormatGroupProps = {
+  selected: ReadonlyArray<Format>;
+  onToggle: (format: Format) => void;
+};
+
+function FormatGroup({ selected, onToggle }: FormatGroupProps) {
+  return (
+    <ToggleButtonGroup
+      selectionMode="multiple"
+      selectedKeys={selected}
+      onSelectionChange={(keys) => {
+        const next = new Set(keys as Set<Format>);
+        for (const format of FORMAT_VALUES) {
+          const inNext = next.has(format);
+          const inCurrent = selected.includes(format);
+          if (inNext !== inCurrent) onToggle(format);
+        }
+      }}
+      size="sm"
+      aria-label="Filtrar por modalidad"
+    >
+      {FORMAT_VALUES.map((format) => (
+        <ToggleButton key={format} id={format} size="sm">
+          {format}
+        </ToggleButton>
+      ))}
+    </ToggleButtonGroup>
+  );
+}
+
+type TierGroupProps = {
+  selected: ReadonlyArray<ScoreTier>;
+  onToggle: (tier: ScoreTier) => void;
+};
+
+function TierGroup({ selected, onToggle }: TierGroupProps) {
+  return (
+    <ToggleButtonGroup
+      selectionMode="multiple"
+      selectedKeys={selected}
+      onSelectionChange={(keys) => {
+        const next = new Set(keys as Set<ScoreTier>);
+        for (const tier of TIER_VALUES) {
+          const inNext = next.has(tier);
+          const inCurrent = selected.includes(tier);
+          if (inNext !== inCurrent) onToggle(tier);
+        }
+      }}
+      size="sm"
+      aria-label="Filtrar por nivel de coincidencia"
+    >
+      {TIER_VALUES.map((tier) => (
+        <ToggleButton key={tier} id={tier} size="sm">
+          {TIER_LABELS[tier]}
+        </ToggleButton>
+      ))}
+    </ToggleButtonGroup>
+  );
+}
 
 export function JobsFilterBar({
   value,
@@ -50,6 +119,10 @@ export function JobsFilterBar({
           aria-controls="jobs-filter-panel"
           onPress={() => setIsPanelOpen((current) => !current)}
         >
+          <ChevronDown
+            aria-hidden="true"
+            className={`transition-transform duration-[220ms] ease-out motion-reduce:transition-none ${isPanelOpen ? "rotate-180" : ""}`}
+          />
           Filtros
           {activeFacetCount > 0 ? (
             <>
@@ -69,56 +142,53 @@ export function JobsFilterBar({
       <section
         id="jobs-filter-panel"
         aria-label="Filtros de ofertas"
-        hidden={!isPanelOpen}
-        className="rounded-lg border border-border bg-surface p-3"
+        aria-hidden={!isPanelOpen}
+        data-open={isPanelOpen}
+        inert={!isPanelOpen}
+        className="grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] duration-[220ms] ease-out motion-reduce:transition-none data-[open=true]:grid-rows-[1fr] data-[open=true]:opacity-100"
       >
-        <div className="flex flex-col gap-2">
-          <div className="flex justify-end">
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              isDisabled={activeFacetCount === 0}
-              onPress={onClearAll}
-            >
-              Limpiar todo
-            </Button>
+        <div className="min-h-0 overflow-hidden">
+          <div className="rounded-lg border border-border bg-surface p-4">
+            <div className="flex items-center justify-between gap-3">
+              <p
+                className="text-sm text-muted"
+                aria-live="polite"
+                id="jobs-filter-panel-count"
+              >
+                Mostrando {resultCount} oferta{resultCount === 1 ? "" : "s"}
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                isDisabled={activeFacetCount === 0}
+                onPress={onClearAll}
+              >
+                <X aria-hidden="true" size={14} />
+                Limpiar todo
+              </Button>
+            </div>
+
+            <Separator variant="secondary" className="my-3" />
+
+            <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
+              <legend className="text-[13px] font-medium tracking-[0.01em] text-muted">
+                Modalidad
+              </legend>
+              <FormatGroup selected={formats} onToggle={onToggleFormat} />
+            </fieldset>
+
+            <Separator variant="secondary" className="my-3" />
+
+            <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
+              <legend className="text-[13px] font-medium tracking-[0.01em] text-muted">
+                Nivel de coincidencia
+              </legend>
+              <TierGroup selected={tiers} onToggle={onToggleTier} />
+            </fieldset>
           </div>
-          <fieldset className="flex flex-wrap items-center gap-2 border-0 p-0 m-0">
-            <legend className="sr-only">Filtrar por modalidad</legend>
-            {FORMAT_VALUES.map((format) => (
-              <ToggleButton
-                key={format}
-                size="sm"
-                variant="ghost"
-                isSelected={formats.includes(format)}
-                onChange={() => onToggleFormat(format)}
-                aria-label={`Filtrar por ${format}`}
-              >
-                {format}
-              </ToggleButton>
-            ))}
-          </fieldset>
-          <fieldset className="flex flex-wrap items-center gap-2 border-0 p-0 m-0">
-            <legend className="sr-only">Filtrar por tier</legend>
-            {TIER_VALUES.map((tier) => (
-              <ToggleButton
-                key={tier}
-                size="sm"
-                variant="ghost"
-                isSelected={tiers.includes(tier)}
-                onChange={() => onToggleTier(tier)}
-                aria-label={`Filtrar por ${TIER_LABELS[tier]}`}
-              >
-                {TIER_LABELS[tier]}
-              </ToggleButton>
-            ))}
-          </fieldset>
         </div>
       </section>
-      <p className="text-xs leading-[1.4] text-muted" aria-live="polite">
-        Mostrando {resultCount} oferta{resultCount === 1 ? "" : "s"}
-      </p>
     </div>
   );
 }
