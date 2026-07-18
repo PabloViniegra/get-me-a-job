@@ -97,12 +97,13 @@ what HeroUI ships.
 
 ### Typography
 
-Fonts: **IBM Plex Sans** (UI) and **IBM Plex Mono** (data/code) via `next/font/google` in
+Fonts: **Space Grotesk** (UI) and **JetBrains Mono** (data/code) via `next/font/google` in
 `layout.tsx`, exposed as `--font-sans` / `--font-mono`. Chosen over Geist — the default on
 effectively every Vercel-adjacent starter, which is exactly the template-y look this system is
-trying not to have. IBM Plex was designed as one coherent type system across IBM's whole product
-line; that's the same relationship this app's sans and mono should have to each other. Base size
-is 14px — dense, IDE-like, not a marketing page.
+trying not to have. Space Grotesk's geometric humanist sans paired with JetBrains Mono (designed
+specifically for code, with proper italics and ligatures) reads as the same IDE/dev-tool
+register this app's interface is targeting — diagnostic, not promotional. Base size is 14px —
+dense, IDE-like, not a marketing page.
 
 | Level | Size / Line-height | Weight | Tracking | Use |
 |---|---|---|---|---|
@@ -331,8 +332,8 @@ expose more semantic colors as Tailwind utilities:
   --color-accent-foreground: var(--accent-foreground);
   --color-border: var(--border);
   --color-muted: var(--muted);
-  --font-sans: var(--font-ibm-plex-sans);
-  --font-mono: var(--font-ibm-plex-mono);
+  --font-sans: var(--font-space-grotesk);
+  --font-mono: var(--font-jetbrains-mono);
 }
 ```
 
