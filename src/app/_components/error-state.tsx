@@ -12,17 +12,24 @@ export function ErrorState({ errorMessage, onRetry }: ErrorStateProps) {
   return (
     <div
       role="alert"
-      className="flex flex-col items-center gap-3 rounded-lg border border-border bg-surface p-8 text-center"
+      className="flex flex-col items-start gap-3 rounded-lg border border-border bg-surface p-6"
     >
-      <div className="flex size-10 items-center justify-center rounded-full border border-border-secondary text-danger">
-        <AlertCircle aria-hidden="true" size={20} />
+      <span className="font-mono text-xs uppercase tracking-wider text-muted">
+        {"// error"}
+      </span>
+      <div className="flex items-center gap-2">
+        <AlertCircle
+          aria-hidden="true"
+          size={16}
+          className="shrink-0 text-danger"
+        />
+        <h3 className="text-base font-semibold text-foreground">
+          No se pudieron cargar las ofertas
+        </h3>
       </div>
-      <h3 className="text-base font-semibold text-foreground">
-        No se pudieron cargar las ofertas
-      </h3>
-      <p className="max-w-sm text-sm text-muted">{errorMessage}</p>
+      <p className="max-w-md text-sm text-muted">{errorMessage}</p>
       {onRetry ? (
-        <Button onPress={onRetry} variant="secondary">
+        <Button onPress={onRetry} variant="secondary" size="sm">
           Reintentar
         </Button>
       ) : null}

@@ -295,49 +295,20 @@ matches Design Philosophy #5: analytical, not motivational. Describe the match, 
 
 ---
 
-## Known Implementation Gaps
+## Implementation Status
 
-Two verified issues found while writing this doc — flagging rather than silently fixing, since
-both touch shipped wiring:
+The two issues previously tracked here as open gaps are both resolved in the current codebase:
 
-**1. HeroUI's own dark tokens never activate.** `providers.tsx` sets
-`<ThemeProvider attribute="class" ...>`, but HeroUI's component CSS keys dark mode off
-`[data-theme='dark']`, not `.dark` (confirmed in `@heroui/styles` and the `heroui-react` skill).
-`next-themes` (`^0.4.6`, confirmed in `node_modules/next-themes/dist/index.d.ts`) accepts an array
-here:
+**1. HeroUI's dark tokens now activate.** `src/app/providers.tsx` passes
+`attribute={["class", "data-theme"]}` to `ThemeProvider`, so `next-themes` writes both
+`.dark` (consumed by the Tailwind variant) and `data-theme="dark"` (consumed by HeroUI's
+component selectors). Card, Chip, Button, and the copilot Drawer switch token sets with
+the resolved theme.
 
-```diff
-- <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-+ <ThemeProvider attribute={["class", "data-theme"]} defaultTheme="system" enableSystem>
-```
-
-Without this, every HeroUI component (Card, Chip, Button, the copilot Drawer, …) stays on the
-light token set regardless of resolved theme.
-
-**2. `globals.css` shadows HeroUI's real background/foreground.** The current `:root` block
-hardcodes `#ffffff`/`#171717` (create-next-app boilerplate) and only flips via
-`prefers-color-scheme`, which ignores both `next-themes` and the `.dark` class the app already
-defines a Tailwind variant for. This silently overrides HeroUI's actual oklch tokens for exactly
-the two values (`--background`/`--foreground`) this doc documents above. Recommended fix — delete
-the boilerplate block and let HeroUI's own tokens drive `@theme inline`, optionally extending it to
-expose more semantic colors as Tailwind utilities:
-
-```css
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-surface: var(--surface);
-  --color-surface-foreground: var(--surface-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-border: var(--border);
-  --color-muted: var(--muted);
-  --font-sans: var(--font-space-grotesk);
-  --font-mono: var(--font-jetbrains-mono);
-}
-```
-
-Neither fix is applied by this change — say the word and I'll make them in a follow-up.
+**2. `globals.css` no longer shadows HeroUI's background/foreground.** The previous
+create-next-app boilerplate (hex literals under `:root` flipped via `prefers-color-scheme`)
+is gone. `globals.css` now uses `@theme inline` to map Tailwind's `--color-*` utilities onto
+HeroUI's `--background`/`--foreground`/`--surface`/`--accent`/etc., with no hex literals.
 
 ---
 

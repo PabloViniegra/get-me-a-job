@@ -1,6 +1,5 @@
 "use no memo";
 
-import { Separator } from "@heroui/react";
 import { type ScoreTier, TIER_LABELS } from "@/lib/score-tier";
 
 type DashboardStatsProps = {
@@ -15,10 +14,16 @@ function StatCell({ value, label }: StatCellProps) {
       <span className="font-mono text-xl leading-[1.2] font-semibold tabular-nums text-foreground">
         {value}
       </span>
-      <span className="text-xs leading-[1.4] font-medium uppercase tracking-wider text-muted">
+      <span className="text-xs leading-[1.4] font-medium text-muted">
         {label}
       </span>
     </div>
+  );
+}
+
+function Tick() {
+  return (
+    <div aria-hidden="true" className="w-px self-stretch bg-border-secondary" />
   );
 }
 
@@ -35,12 +40,12 @@ export function DashboardStats({ jobs }: DashboardStatsProps) {
       className="flex flex-row items-stretch rounded-md border border-border bg-surface px-2 py-3"
     >
       <StatCell value={String(totalCount)} label="Ofertas" />
-      <Separator orientation="vertical" className="self-stretch" />
+      <Tick />
       <StatCell
         value={String(excellentCount)}
         label={`${TIER_LABELS.excellent}s`}
       />
-      <Separator orientation="vertical" className="self-stretch" />
+      <Tick />
       <StatCell value={String(pendingCount)} label={TIER_LABELS.pending} />
     </section>
   );

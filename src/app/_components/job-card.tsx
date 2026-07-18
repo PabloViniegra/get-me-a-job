@@ -1,7 +1,7 @@
 "use client";
 "use no memo";
 
-import { Card, Chip, Link, TagGroup } from "@heroui/react";
+import { Card, Link } from "@heroui/react";
 import { Clock, ExternalLink } from "lucide-react";
 import type { JobCardData } from "@/lib/jobs.dto";
 import { relativeJobTime } from "@/lib/relative-time";
@@ -10,16 +10,19 @@ import { MatchScoreChip } from "./match-score-chip";
 type JobCardProps = { data: JobCardData };
 
 const HTTP_URL_PATTERN = /^https?:\/\//;
+const SALARY_MISSING = "—";
 
 export function JobCard({ data }: JobCardProps) {
   const linkedinHref = HTTP_URL_PATTERN.test(data.linkedinUrl)
     ? data.linkedinUrl
     : null;
 
+  const requirementCount = data.requirements.length;
+
   return (
     <Card className="h-full rounded-lg border border-border p-4 transition-colors duration-150 ease-out hover:border-border-secondary">
       <Card.Header className="flex-col items-stretch gap-2">
-        <div className="flex flex-row items-center justify-between gap-3">
+        <div className="flex flex-row items-start justify-between gap-3">
           <Card.Title className="text-base leading-[1.4] font-semibold text-foreground">
             {data.title}
           </Card.Title>
@@ -28,31 +31,38 @@ export function JobCard({ data }: JobCardProps) {
             hasAiAnalysis={data.hasAiAnalysis}
           />
         </div>
-        <Chip>{data.format}</Chip>
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 font-mono text-xs uppercase tracking-wider text-muted">
+          <span>{data.format}</span>
+          {requirementCount > 0 ? (
+            <>
+              <span aria-hidden="true" className="text-border-secondary">
+                ·
+              </span>
+              <span>
+                {data.requirements.join(" · ")}
+                {data.requirementsOverflowCount > 0
+                  ? ` · +${data.requirementsOverflowCount}`
+                  : ""}
+              </span>
+            </>
+          ) : null}
+        </div>
       </Card.Header>
       <Card.Content className="gap-3">
         <p className="line-clamp-3 text-sm leading-[1.5] font-normal text-foreground">
           {data.descriptionPreview}
         </p>
-        <p className="text-sm leading-[1.5] font-normal text-muted">
-          {data.salary ?? "Not disclosed"}
+        <p className="font-mono text-sm leading-[1.5] tabular-nums text-foreground">
+          {data.salary ?? (
+            <span className="text-muted" title="Salario no publicado">
+              {SALARY_MISSING}
+            </span>
+          )}
         </p>
-        {data.requirements.length > 0 ? (
-          <TagGroup aria-label="Requisitos">
-            <TagGroup.List className="flex flex-wrap gap-1.5">
-              {data.requirements.map((requirement) => (
-                <Chip key={requirement}>{requirement}</Chip>
-              ))}
-              {data.requirementsOverflowCount > 0 ? (
-                <Chip>+{data.requirementsOverflowCount}</Chip>
-              ) : null}
-            </TagGroup.List>
-          </TagGroup>
-        ) : null}
         {data.whyItFitsPreview ? (
-          <div className="flex flex-col gap-1 border-l-2 border-border-secondary pl-3">
-            <span className="text-xs leading-[1.4] font-medium uppercase tracking-wider text-muted">
-              Por qué encaja
+          <div className="flex flex-col gap-1 pt-1">
+            <span className="font-mono text-xs italic text-muted">
+              {"// por qué encaja"}
             </span>
             <p className="text-sm leading-[1.5] font-normal text-foreground">
               {data.whyItFitsPreview}
@@ -61,7 +71,7 @@ export function JobCard({ data }: JobCardProps) {
         ) : null}
       </Card.Content>
       <Card.Footer className="flex flex-row items-center justify-between gap-3">
-        <span className="flex items-center gap-1.5 text-xs leading-[1.4] font-normal text-muted">
+        <span className="flex items-center gap-1.5 font-mono text-xs tabular-nums text-muted">
           <Clock aria-hidden="true" size={12} />
           {relativeJobTime(data.createdAt)}
         </span>

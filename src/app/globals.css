@@ -17,6 +17,12 @@
   --animate-job-enter: job-enter 200ms ease-out both;
 }
 
+:root,
+[data-theme="light"],
+[data-theme="dark"] {
+  --link: var(--accent);
+}
+
 @keyframes job-enter {
   from {
     opacity: 0;

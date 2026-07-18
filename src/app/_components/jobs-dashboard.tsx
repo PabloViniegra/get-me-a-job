@@ -8,6 +8,7 @@ import { useCallback, useMemo } from "react";
 import { sileo } from "sileo";
 import { applyFilters } from "@/lib/dashboard-filters";
 import { friendlyErrorMessage } from "@/lib/error-message";
+import { relativeJobTime } from "@/lib/relative-time";
 import { useTRPC } from "@/trpc/client";
 import { resolveDashboardView } from "./dashboard-state";
 import { DashboardStats } from "./dashboard-stats";
@@ -69,16 +70,39 @@ export function JobsDashboard() {
     [jobs.data, query, formats, tiers],
   );
 
+  const newestCreatedAt = useMemo(
+    () =>
+      jobs.data?.reduce<Date | null>(
+        (acc, job) =>
+          acc === null || job.createdAt.getTime() > acc.getTime()
+            ? job.createdAt
+            : acc,
+        null,
+      ),
+    [jobs.data],
+  );
+
   return (
     <section className="flex w-full max-w-7xl flex-col gap-4 p-4">
-      <header className="flex items-center justify-between">
-        <h1 className="text-[28px] font-semibold leading-[1.2] tracking-[-0.02em] text-foreground">
-          Get{" "}
-          <span className="font-mono font-medium tracking-normal text-muted">
-            me
-          </span>{" "}
-          a job
-        </h1>
+      <header className="flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-[28px] font-semibold leading-[1.2] tracking-[-0.02em] text-foreground">
+            Get{" "}
+            <span className="font-mono font-medium tracking-normal text-muted">
+              me
+            </span>{" "}
+            a job
+          </h1>
+          {jobs.data ? (
+            <p className="font-mono text-xs uppercase tracking-wider text-muted">
+              dashboard · {jobs.data.length}{" "}
+              {jobs.data.length === 1 ? "oferta" : "ofertas"}
+              {newestCreatedAt
+                ? ` · más reciente ${relativeJobTime(newestCreatedAt)}`
+                : ""}
+            </p>
+          ) : null}
+        </div>
         <Button
           aria-label="Actualizar ofertas"
           variant="secondary"
