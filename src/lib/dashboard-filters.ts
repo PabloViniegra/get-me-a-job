@@ -1,14 +1,22 @@
 import Fuse from "fuse.js";
 import type { JobCardData } from "./jobs.dto";
+import type { ScoreTier } from "./score-tier";
 
 export type FilterState = {
   query: string;
   formats: ReadonlyArray<Format>;
+  tiers: ReadonlyArray<ScoreTier>;
 };
 
 export type Format = "Remote" | "Hybrid" | "On-site";
 
 const ALL_FORMATS: ReadonlyArray<Format> = ["Remote", "Hybrid", "On-site"];
+const ALL_TIERS: ReadonlyArray<ScoreTier> = [
+  "excellent",
+  "worth",
+  "low",
+  "pending",
+];
 
 const SEARCH_THRESHOLD = 0.3;
 
@@ -44,5 +52,16 @@ export function filterByFormats(
   if (formats.length === ALL_FORMATS.length) return jobs;
   return jobs.filter((job) =>
     (formats as ReadonlyArray<string>).includes(job.format),
+  );
+}
+
+export function filterByTiers(
+  jobs: JobCardData[],
+  tiers: ReadonlyArray<ScoreTier>,
+): JobCardData[] {
+  if (tiers.length === 0) return jobs;
+  if (tiers.length === ALL_TIERS.length) return jobs;
+  return jobs.filter((job) =>
+    (tiers as ReadonlyArray<string>).includes(job.scoreTier),
   );
 }

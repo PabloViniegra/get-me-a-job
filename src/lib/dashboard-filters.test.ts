@@ -3,6 +3,7 @@ import {
   createJobSearcher,
   type FilterState,
   filterByFormats,
+  filterByTiers,
   searchJobs,
 } from "./dashboard-filters";
 import type { JobCardData } from "./jobs.dto";
@@ -121,10 +122,15 @@ describe("dashboard-filters", () => {
   });
 
   describe("FilterState", () => {
-    it("carries query and formats (tier placeholder for a later ticket)", () => {
-      const f: FilterState = { query: "backend", formats: ["Remote"] };
+    it("carries query, formats, and tiers", () => {
+      const f: FilterState = {
+        query: "backend",
+        formats: ["Remote"],
+        tiers: ["excellent"],
+      };
       expect(f.query).toBe("backend");
       expect(f.formats).toEqual(["Remote"]);
+      expect(f.tiers).toEqual(["excellent"]);
     });
   });
 
@@ -165,6 +171,50 @@ describe("dashboard-filters", () => {
         makeJob({ id: "c", format: "Hybrid" }),
       ];
       expect(filterByFormats(jobs, ["Remote", "Hybrid", "On-site"])).toBe(jobs);
+    });
+  });
+
+  describe("filterByTiers", () => {
+    it("returns the same array reference when tiers is empty (identity)", () => {
+      const jobs = [
+        makeJob({ id: "a", scoreTier: "excellent" }),
+        makeJob({ id: "b", scoreTier: "low" }),
+      ];
+      expect(filterByTiers(jobs, [])).toBe(jobs);
+    });
+
+    it("keeps only jobs matching a single selected tier", () => {
+      const jobs = [
+        makeJob({ id: "a", scoreTier: "excellent" }),
+        makeJob({ id: "b", scoreTier: "low" }),
+        makeJob({ id: "c", scoreTier: "worth" }),
+      ];
+      const got = filterByTiers(jobs, ["excellent"]);
+      expect(got.map((j) => j.id)).toEqual(["a"]);
+    });
+
+    it("unions jobs across multiple selected tiers (OR semantics), preserving input order", () => {
+      const jobs = [
+        makeJob({ id: "a", scoreTier: "excellent" }),
+        makeJob({ id: "b", scoreTier: "low" }),
+        makeJob({ id: "c", scoreTier: "worth" }),
+        makeJob({ id: "d", scoreTier: "pending" }),
+        makeJob({ id: "e", scoreTier: "excellent" }),
+      ];
+      const got = filterByTiers(jobs, ["excellent", "pending"]);
+      expect(got.map((j) => j.id)).toEqual(["a", "d", "e"]);
+    });
+
+    it("returns the same array reference when all four tiers are selected (identity)", () => {
+      const jobs = [
+        makeJob({ id: "a", scoreTier: "excellent" }),
+        makeJob({ id: "b", scoreTier: "low" }),
+        makeJob({ id: "c", scoreTier: "worth" }),
+        makeJob({ id: "d", scoreTier: "pending" }),
+      ];
+      expect(
+        filterByTiers(jobs, ["excellent", "worth", "low", "pending"]),
+      ).toBe(jobs);
     });
   });
 });
