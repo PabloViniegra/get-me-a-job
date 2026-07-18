@@ -65,3 +65,13 @@ export function filterByTiers(
     (tiers as ReadonlyArray<string>).includes(job.scoreTier),
   );
 }
+
+export function applyFilters(
+  jobs: JobCardData[],
+  filters: FilterState,
+): JobCardData[] {
+  return filterByTiers(
+    filterByFormats(searchJobs(jobs, filters.query), filters.formats),
+    filters.tiers,
+  );
+}

@@ -6,17 +6,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
 import { useCallback, useMemo } from "react";
 import { sileo } from "sileo";
-import {
-  filterByFormats,
-  filterByTiers,
-  searchJobs,
-} from "@/lib/dashboard-filters";
+import { applyFilters } from "@/lib/dashboard-filters";
 import { friendlyErrorMessage } from "@/lib/error-message";
 import { useTRPC } from "@/trpc/client";
 import { resolveDashboardView } from "./dashboard-state";
 import { DashboardStats } from "./dashboard-stats";
 import { EmptyState } from "./empty-state";
 import { ErrorState } from "./error-state";
+import { FiltersEmptyState } from "./filters-empty-state";
 import { JobCard } from "./job-card";
 import { JobCardSkeleton } from "./job-card-skeleton";
 import { JobsFilterBar } from "./jobs-filter-bar";
@@ -43,6 +40,7 @@ export function JobsDashboard() {
     toggleTier,
     clearAll,
     activeFacetCount,
+    isActive,
   } = useDashboardFilters();
 
   const handleRetry = useCallback(() => {
@@ -67,13 +65,7 @@ export function JobsDashboard() {
   });
 
   const filteredJobs = useMemo(
-    () =>
-      jobs.data
-        ? filterByTiers(
-            filterByFormats(searchJobs(jobs.data, query), formats),
-            tiers,
-          )
-        : [],
+    () => (jobs.data ? applyFilters(jobs.data, { query, formats, tiers }) : []),
     [jobs.data, query, formats, tiers],
   );
 
@@ -105,6 +97,12 @@ export function JobsDashboard() {
           activeFacetCount={activeFacetCount}
           onClearAll={clearAll}
         />
+      ) : null}
+
+      {isActive && jobs.data ? (
+        <p aria-live="polite" className="text-sm text-muted">
+          Mostrando {filteredJobs.length} de {jobs.data.length} ofertas
+        </p>
       ) : null}
 
       {view === "loading" ? (
@@ -146,14 +144,7 @@ export function JobsDashboard() {
       ) : null}
 
       {view === "cards" && jobs.data && filteredJobs.length === 0 ? (
-        <output
-          aria-live="polite"
-          className="flex flex-col items-center gap-2 rounded-lg border border-border bg-surface p-6 text-center"
-        >
-          <p className="text-sm text-muted">
-            Sin resultados para «{query.trim()}».
-          </p>
-        </output>
+        <FiltersEmptyState onClearFilters={clearAll} />
       ) : null}
     </section>
   );

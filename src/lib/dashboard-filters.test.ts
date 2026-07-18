@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyFilters,
   createJobSearcher,
   type FilterState,
   filterByFormats,
@@ -215,6 +216,157 @@ describe("dashboard-filters", () => {
       expect(
         filterByTiers(jobs, ["excellent", "worth", "low", "pending"]),
       ).toBe(jobs);
+    });
+  });
+
+  describe("applyFilters", () => {
+    const emptyFilters: FilterState = { query: "", formats: [], tiers: [] };
+
+    it("returns the same array reference when all facets are empty (identity)", () => {
+      const jobs = [makeJob({ id: "a" })];
+      expect(applyFilters(jobs, emptyFilters)).toBe(jobs);
+    });
+
+    it("returns the same array reference when query is whitespace-only", () => {
+      const jobs = [makeJob({ id: "a" })];
+      expect(applyFilters(jobs, { ...emptyFilters, query: "   " })).toBe(jobs);
+    });
+
+    it("filters by query alone, keeping only jobs whose title matches", () => {
+      const jobs = [
+        makeJob({ id: "a", title: "Backend Engineer" }),
+        makeJob({ id: "b", title: "Frontend Developer" }),
+      ];
+      expect(
+        applyFilters(jobs, { ...emptyFilters, query: "backend" }).map(
+          (j) => j.id,
+        ),
+      ).toEqual(["a"]);
+    });
+
+    it("filters by formats alone, unioning jobs across multiple selected formats (OR within facet)", () => {
+      const jobs = [
+        makeJob({ id: "a", format: "Remote" }),
+        makeJob({ id: "b", format: "On-site" }),
+        makeJob({ id: "c", format: "Hybrid" }),
+      ];
+      expect(
+        applyFilters(jobs, {
+          ...emptyFilters,
+          formats: ["Remote", "Hybrid"],
+        }).map((j) => j.id),
+      ).toEqual(["a", "c"]);
+    });
+
+    it("filters by tiers alone, unioning jobs across multiple selected tiers (OR within facet)", () => {
+      const jobs = [
+        makeJob({ id: "a", scoreTier: "excellent" }),
+        makeJob({ id: "b", scoreTier: "low" }),
+        makeJob({ id: "c", scoreTier: "worth" }),
+      ];
+      expect(
+        applyFilters(jobs, {
+          ...emptyFilters,
+          tiers: ["excellent", "worth"],
+        }).map((j) => j.id),
+      ).toEqual(["a", "c"]);
+    });
+
+    it("composes all three facets with AND semantics (intersection across facets)", () => {
+      const jobs = [
+        makeJob({
+          id: "a",
+          title: "Backend Engineer",
+          format: "Remote",
+          scoreTier: "excellent",
+        }),
+        makeJob({
+          id: "b",
+          title: "Backend Engineer",
+          format: "On-site",
+          scoreTier: "excellent",
+        }),
+        makeJob({
+          id: "c",
+          title: "Backend Engineer",
+          format: "Remote",
+          scoreTier: "low",
+        }),
+        makeJob({
+          id: "d",
+          title: "Frontend Developer",
+          format: "Remote",
+          scoreTier: "excellent",
+        }),
+      ];
+      expect(
+        applyFilters(jobs, {
+          query: "backend",
+          formats: ["Remote"],
+          tiers: ["excellent"],
+        }).map((j) => j.id),
+      ).toEqual(["a"]);
+    });
+
+    it("returns an empty array when no job matches all active facets", () => {
+      const jobs = [
+        makeJob({
+          id: "a",
+          title: "Frontend",
+          format: "On-site",
+          scoreTier: "low",
+        }),
+      ];
+      expect(
+        applyFilters(jobs, {
+          query: "backend",
+          formats: ["Remote"],
+          tiers: ["excellent"],
+        }),
+      ).toEqual([]);
+    });
+
+    it("preserves the input order of matching jobs", () => {
+      const jobs = [
+        makeJob({ id: "c", format: "Remote" }),
+        makeJob({ id: "a", format: "Remote" }),
+        makeJob({ id: "b", format: "Remote" }),
+      ];
+      expect(
+        applyFilters(jobs, { ...emptyFilters, formats: ["Remote"] }).map(
+          (j) => j.id,
+        ),
+      ).toEqual(["c", "a", "b"]);
+    });
+
+    it("does not mutate the input array", () => {
+      const jobs = [
+        makeJob({
+          id: "a",
+          title: "Backend",
+          format: "Remote",
+          scoreTier: "excellent",
+        }),
+        makeJob({
+          id: "b",
+          title: "Frontend",
+          format: "On-site",
+          scoreTier: "low",
+        }),
+      ];
+      const beforeIds = jobs.map((j) => j.id);
+      const beforeTitles = jobs.map((j) => j.title);
+      const beforeFormats = jobs.map((j) => j.format);
+      const beforeTiers = jobs.map((j) => j.scoreTier);
+      applyFilters(jobs, {
+        query: "anything",
+        formats: ["Remote"],
+        tiers: ["excellent"],
+      });
+      expect(jobs.map((j) => j.id)).toEqual(beforeIds);
+      expect(jobs.map((j) => j.title)).toEqual(beforeTitles);
+      expect(jobs.map((j) => j.format)).toEqual(beforeFormats);
+      expect(jobs.map((j) => j.scoreTier)).toEqual(beforeTiers);
     });
   });
 });

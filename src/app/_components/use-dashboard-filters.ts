@@ -13,6 +13,7 @@ export type DashboardFilters = {
   toggleTier: (tier: ScoreTier) => void;
   clearAll: () => void;
   activeFacetCount: number;
+  isActive: boolean;
 };
 
 export function useDashboardFilters(): DashboardFilters {
@@ -42,6 +43,8 @@ export function useDashboardFilters(): DashboardFilters {
     setTiers([]);
   }, []);
 
+  const isActive = query !== "" || tiers.length > 0 || formats.length > 0;
+
   return {
     query,
     setQuery,
@@ -51,5 +54,6 @@ export function useDashboardFilters(): DashboardFilters {
     toggleTier,
     clearAll,
     activeFacetCount: formats.length + tiers.length,
+    isActive,
   };
 }
