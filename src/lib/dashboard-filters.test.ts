@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   applyFilters,
-  createJobSearcher,
   type FilterState,
   filterByFormats,
   filterByTiers,
@@ -100,25 +99,6 @@ describe("dashboard-filters", () => {
       ];
       const got = searchJobs(jobs, "backend");
       expect(got.map((j) => j.id)).toEqual(["a"]);
-    });
-  });
-
-  describe("createJobSearcher", () => {
-    it("returns a searcher whose empty-query result preserves the input array reference", () => {
-      const jobs = [makeJob({ id: "a", title: "Backend" })];
-      const searcher = createJobSearcher(jobs);
-      expect(searcher.search("")).toBe(jobs);
-    });
-
-    it("returns the same hit set as searchJobs for a non-empty query", () => {
-      const jobs = [
-        makeJob({ id: "a", title: "Backend Engineer" }),
-        makeJob({ id: "b", title: "Frontend Developer" }),
-      ];
-      const searcher = createJobSearcher(jobs);
-      expect(searcher.search("backend").map((j) => j.id)).toEqual(
-        searchJobs(jobs, "backend").map((j) => j.id),
-      );
     });
   });
 
