@@ -12,6 +12,7 @@ import {
 import { ChevronDown, X } from "lucide-react";
 import { useState } from "react";
 import { FORMAT_VALUES, type Format } from "@/lib/dashboard-filters";
+import { SORT_KEYS, SORT_LABELS, type SortKey } from "@/lib/dashboard-sort";
 import { type ScoreTier, TIER_LABELS, TIER_VALUES } from "@/lib/score-tier";
 
 type JobsFilterBarProps = {
@@ -22,6 +23,8 @@ type JobsFilterBarProps = {
   onToggleFormat: (format: Format) => void;
   tiers: ReadonlyArray<ScoreTier>;
   onToggleTier: (tier: ScoreTier) => void;
+  sortKey: SortKey;
+  onChangeSortKey: (key: SortKey) => void;
   activeFacetCount: number;
   onClearAll: () => void;
 };
@@ -86,6 +89,33 @@ function TierGroup({ selected, onToggle }: TierGroupProps) {
   );
 }
 
+type SortGroupProps = {
+  selected: SortKey;
+  onChange: (key: SortKey) => void;
+};
+
+function SortGroup({ selected, onChange }: SortGroupProps) {
+  return (
+    <ToggleButtonGroup
+      selectionMode="single"
+      disallowEmptySelection
+      selectedKeys={[selected]}
+      onSelectionChange={(keys) => {
+        const next = Array.from(keys as Set<SortKey>)[0];
+        if (next && next !== selected) onChange(next);
+      }}
+      size="sm"
+      aria-label="Ordenar por"
+    >
+      {SORT_KEYS.map((key) => (
+        <ToggleButton key={key} id={key} size="sm">
+          {SORT_LABELS[key]}
+        </ToggleButton>
+      ))}
+    </ToggleButtonGroup>
+  );
+}
+
 export function JobsFilterBar({
   value,
   onChange,
@@ -94,6 +124,8 @@ export function JobsFilterBar({
   onToggleFormat,
   tiers,
   onToggleTier,
+  sortKey,
+  onChangeSortKey,
   activeFacetCount,
   onClearAll,
 }: JobsFilterBarProps) {
@@ -185,6 +217,15 @@ export function JobsFilterBar({
                 Nivel de coincidencia
               </legend>
               <TierGroup selected={tiers} onToggle={onToggleTier} />
+            </fieldset>
+
+            <Separator variant="secondary" className="my-3" />
+
+            <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
+              <legend className="text-[13px] font-medium tracking-[0.01em] text-muted">
+                Ordenar por
+              </legend>
+              <SortGroup selected={sortKey} onChange={onChangeSortKey} />
             </fieldset>
           </div>
         </div>

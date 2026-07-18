@@ -7,24 +7,25 @@ import { RefreshCw } from "lucide-react";
 import { useCallback, useMemo } from "react";
 import { sileo } from "sileo";
 import { applyFilters } from "@/lib/dashboard-filters";
+import { applySort } from "@/lib/dashboard-sort";
 import { friendlyErrorMessage } from "@/lib/error-message";
 import { relativeJobTime } from "@/lib/relative-time";
 import { useTRPC } from "@/trpc/client";
 import { resolveDashboardView } from "./dashboard-state";
 import { DashboardStats } from "./dashboard-stats";
+import { DashboardStatsSkeleton } from "./dashboard-stats-skeleton";
 import { EmptyState } from "./empty-state";
 import { ErrorState } from "./error-state";
 import { FiltersEmptyState } from "./filters-empty-state";
+import { HeaderSubtitleSkeleton } from "./header-subtitle-skeleton";
 import { JobCard } from "./job-card";
-import { JobCardSkeleton } from "./job-card-skeleton";
+import { JobCardGridSkeleton } from "./job-card-grid-skeleton";
 import { JobsFilterBar } from "./jobs-filter-bar";
+import { JobsFilterBarSkeleton } from "./jobs-filter-bar-skeleton";
 import { useDashboardFilters } from "./use-dashboard-filters";
+import { useDashboardSort } from "./use-dashboard-sort";
 
-const SKELETON_COUNT = 4;
-const SKELETON_KEYS = Array.from(
-  { length: SKELETON_COUNT },
-  (_, i) => `skeleton-${i}`,
-);
+const SKELETON_COUNT = 6;
 const STAGGER_STEP_MS = 60;
 const STAGGER_INDEX_CAP = 6;
 
@@ -43,6 +44,7 @@ export function JobsDashboard() {
     activeFacetCount,
     isActive,
   } = useDashboardFilters();
+  const { sortKey, setSortKey } = useDashboardSort();
 
   const handleRetry = useCallback(() => {
     void queryClient.invalidateQueries(trpc.jobs.list.queryFilter());
@@ -65,9 +67,14 @@ export function JobsDashboard() {
     dataLength: jobs.data?.length ?? 0,
   });
 
+  const isLoading = view === "loading";
+
   const filteredJobs = useMemo(
-    () => (jobs.data ? applyFilters(jobs.data, { query, formats, tiers }) : []),
-    [jobs.data, query, formats, tiers],
+    () =>
+      jobs.data
+        ? applySort(applyFilters(jobs.data, { query, formats, tiers }), sortKey)
+        : [],
+    [jobs.data, query, formats, tiers, sortKey],
   );
 
   const newestCreatedAt = useMemo(
@@ -93,7 +100,9 @@ export function JobsDashboard() {
             </span>{" "}
             a job
           </h1>
-          {jobs.data ? (
+          {isLoading ? (
+            <HeaderSubtitleSkeleton />
+          ) : jobs.data ? (
             <p className="font-mono text-xs uppercase tracking-wider text-muted">
               dashboard · {jobs.data.length}{" "}
               {jobs.data.length === 1 ? "oferta" : "ofertas"}
@@ -113,9 +122,15 @@ export function JobsDashboard() {
         </Button>
       </header>
 
-      {jobs.data ? <DashboardStats jobs={jobs.data} /> : null}
+      {isLoading ? (
+        <DashboardStatsSkeleton />
+      ) : jobs.data ? (
+        <DashboardStats jobs={jobs.data} />
+      ) : null}
 
-      {view === "cards" && jobs.data ? (
+      {isLoading ? (
+        <JobsFilterBarSkeleton />
+      ) : view === "cards" && jobs.data ? (
         <JobsFilterBar
           value={query}
           onChange={setQuery}
@@ -124,6 +139,8 @@ export function JobsDashboard() {
           onToggleFormat={toggleFormat}
           tiers={tiers}
           onToggleTier={toggleTier}
+          sortKey={sortKey}
+          onChangeSortKey={setSortKey}
           activeFacetCount={activeFacetCount}
           onClearAll={clearAll}
         />
@@ -135,26 +152,16 @@ export function JobsDashboard() {
         </p>
       ) : null}
 
-      {view === "loading" ? (
-        <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {SKELETON_KEYS.map((key) => (
-            <li key={key}>
-              <JobCardSkeleton />
-            </li>
-          ))}
-        </ul>
-      ) : null}
-
-      {view === "error" ? (
+      {isLoading ? (
+        <JobCardGridSkeleton count={SKELETON_COUNT} />
+      ) : view === "error" ? (
         <ErrorState
           errorMessage={friendlyErrorMessage(jobs.error?.message ?? "")}
           onRetry={handleRetry}
         />
-      ) : null}
-
-      {view === "empty" ? <EmptyState onRetry={handleRetry} /> : null}
-
-      {view === "cards" && filteredJobs.length > 0 ? (
+      ) : view === "empty" ? (
+        <EmptyState onRetry={handleRetry} />
+      ) : view === "cards" && filteredJobs.length > 0 ? (
         <ul
           aria-busy={jobs.isFetching}
           className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
@@ -171,9 +178,7 @@ export function JobsDashboard() {
             </li>
           ))}
         </ul>
-      ) : null}
-
-      {view === "cards" && jobs.data && filteredJobs.length === 0 ? (
+      ) : view === "cards" && jobs.data && filteredJobs.length === 0 ? (
         <FiltersEmptyState onClearFilters={clearAll} />
       ) : null}
     </section>
