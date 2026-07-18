@@ -16,7 +16,7 @@ export function chipClassForTier(tier: ScoreTier): ChipClasses {
     case "excellent":
       return {
         container:
-          "bg-accent-soft text-accent-soft-foreground motion-safe:animate-pulse",
+          "bg-accent-soft text-accent-soft-foreground motion-safe:animate-glow-pulse",
         icon: "motion-safe:animate-spin [animation-duration:2s] text-accent",
         text: "font-mono tabular-nums",
       };

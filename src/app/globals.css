@@ -14,7 +14,8 @@
   --color-muted: var(--muted);
   --font-sans: var(--font-space-grotesk);
   --font-mono: var(--font-jetbrains-mono);
-  --animate-job-enter: job-enter 200ms ease-out both;
+  --animate-job-enter: job-enter 240ms ease-out both;
+  --animate-glow-pulse: glow-pulse 2s ease-in-out infinite;
 }
 
 :root,
@@ -26,11 +27,21 @@
 @keyframes job-enter {
   from {
     opacity: 0;
-    transform: translateY(2px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 35%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 8px color-mix(in oklab, var(--accent) 0%, transparent);
   }
 }
 

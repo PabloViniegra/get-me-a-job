@@ -26,7 +26,7 @@ import { useDashboardFilters } from "./use-dashboard-filters";
 import { useDashboardSort } from "./use-dashboard-sort";
 
 const SKELETON_COUNT = 6;
-const STAGGER_STEP_MS = 60;
+const STAGGER_STEP_MS = 80;
 const STAGGER_INDEX_CAP = 6;
 
 export function JobsDashboard() {

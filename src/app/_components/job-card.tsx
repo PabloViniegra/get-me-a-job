@@ -20,7 +20,7 @@ export function JobCard({ data }: JobCardProps) {
   const requirementCount = data.requirements.length;
 
   return (
-    <Card className="h-full rounded-lg border border-border p-4 transition-colors duration-150 ease-out hover:border-border-secondary">
+    <Card className="h-full rounded-lg border border-border p-4 transition-[transform,border-color] duration-150 ease-out hover:-translate-y-px hover:border-border-secondary">
       <Card.Header className="flex-col items-stretch gap-2">
         <div className="flex flex-row items-start justify-between gap-3">
           <Card.Title className="text-base leading-[1.4] font-semibold text-foreground">

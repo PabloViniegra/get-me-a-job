@@ -3,11 +3,11 @@ import type { ScoreTier } from "@/lib/score-tier";
 import { chipClassForTier } from "./match-score-chip";
 
 describe("chipClassForTier (DESIGN-SYSTEM §Match Score Chip — visual contract)", () => {
-  it("'excellent' uses bg-accent-soft surface + motion-safe pulse + a spinning icon at 2s", () => {
+  it("'excellent' uses bg-accent-soft surface + motion-safe glow ring + a spinning icon at 2s", () => {
     const cls = chipClassForTier("excellent");
     expect(cls.container).toContain("bg-accent-soft");
     expect(cls.container).toContain("text-accent-soft-foreground");
-    expect(cls.container).toContain("motion-safe:animate-pulse");
+    expect(cls.container).toContain("motion-safe:animate-glow-pulse");
     expect(cls.icon).toContain("motion-safe:animate-spin");
     expect(cls.icon).toContain("[animation-duration:2s]");
     expect(cls.text).toContain("font-mono");
