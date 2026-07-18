@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
 import { useCallback, useMemo } from "react";
 import { sileo } from "sileo";
-import { searchJobs } from "@/lib/dashboard-filters";
+import { filterByFormats, searchJobs } from "@/lib/dashboard-filters";
 import { friendlyErrorMessage } from "@/lib/error-message";
 import { useTRPC } from "@/trpc/client";
 import { resolveDashboardView } from "./dashboard-state";
@@ -30,7 +30,7 @@ export function JobsDashboard() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const jobs = useQuery(trpc.jobs.list.queryOptions());
-  const { query, setQuery } = useDashboardFilters();
+  const { query, setQuery, formats, toggleFormat } = useDashboardFilters();
 
   const handleRetry = useCallback(() => {
     void queryClient.invalidateQueries(trpc.jobs.list.queryFilter());
@@ -54,8 +54,9 @@ export function JobsDashboard() {
   });
 
   const filteredJobs = useMemo(
-    () => (jobs.data ? searchJobs(jobs.data, query) : []),
-    [jobs.data, query],
+    () =>
+      jobs.data ? filterByFormats(searchJobs(jobs.data, query), formats) : [],
+    [jobs.data, query, formats],
   );
 
   return (
@@ -79,6 +80,8 @@ export function JobsDashboard() {
           value={query}
           onChange={setQuery}
           resultCount={filteredJobs.length}
+          formats={formats}
+          onToggleFormat={toggleFormat}
         />
       ) : null}
 

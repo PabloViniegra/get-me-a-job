@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createJobSearcher,
   type FilterState,
+  filterByFormats,
   searchJobs,
 } from "./dashboard-filters";
 import type { JobCardData } from "./jobs.dto";
@@ -120,9 +121,50 @@ describe("dashboard-filters", () => {
   });
 
   describe("FilterState", () => {
-    it("only requires a `query` field at this stage (placeholder for tier/format in later tickets)", () => {
-      const f: FilterState = { query: "backend" };
+    it("carries query and formats (tier placeholder for a later ticket)", () => {
+      const f: FilterState = { query: "backend", formats: ["Remote"] };
       expect(f.query).toBe("backend");
+      expect(f.formats).toEqual(["Remote"]);
+    });
+  });
+
+  describe("filterByFormats", () => {
+    it("returns the same array reference when formats is empty (identity)", () => {
+      const jobs = [
+        makeJob({ id: "a", format: "Remote" }),
+        makeJob({ id: "b", format: "On-site" }),
+      ];
+      expect(filterByFormats(jobs, [])).toBe(jobs);
+    });
+
+    it("keeps only jobs matching a single selected format", () => {
+      const jobs = [
+        makeJob({ id: "a", format: "Remote" }),
+        makeJob({ id: "b", format: "On-site" }),
+        makeJob({ id: "c", format: "Hybrid" }),
+      ];
+      const got = filterByFormats(jobs, ["Remote"]);
+      expect(got.map((j) => j.id)).toEqual(["a"]);
+    });
+
+    it("unions jobs across multiple selected formats (OR semantics), preserving input order", () => {
+      const jobs = [
+        makeJob({ id: "a", format: "Remote" }),
+        makeJob({ id: "b", format: "On-site" }),
+        makeJob({ id: "c", format: "Hybrid" }),
+        makeJob({ id: "d", format: "Remote" }),
+      ];
+      const got = filterByFormats(jobs, ["Remote", "Hybrid"]);
+      expect(got.map((j) => j.id)).toEqual(["a", "c", "d"]);
+    });
+
+    it("returns the same array reference when all three formats are selected (identity)", () => {
+      const jobs = [
+        makeJob({ id: "a", format: "Remote" }),
+        makeJob({ id: "b", format: "On-site" }),
+        makeJob({ id: "c", format: "Hybrid" }),
+      ];
+      expect(filterByFormats(jobs, ["Remote", "Hybrid", "On-site"])).toBe(jobs);
     });
   });
 });
