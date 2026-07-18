@@ -1,16 +1,10 @@
 "use no memo";
 
 import { Separator } from "@heroui/react";
-import { TIER_LABELS } from "@/lib/score-tier";
-import { deriveDashboardCounts } from "./dashboard-stats.helpers";
-
-export { deriveDashboardCounts };
-export type { DashboardStatCounts } from "./dashboard-stats.helpers";
+import { type ScoreTier, TIER_LABELS } from "@/lib/score-tier";
 
 type DashboardStatsProps = {
-  jobs: ReadonlyArray<{
-    scoreTier: "pending" | "excellent" | "worth" | "low";
-  }>;
+  jobs: ReadonlyArray<{ scoreTier: ScoreTier }>;
 };
 
 type StatCellProps = { value: string; label: string };
@@ -29,25 +23,25 @@ function StatCell({ value, label }: StatCellProps) {
 }
 
 export function DashboardStats({ jobs }: DashboardStatsProps) {
-  const counts = deriveDashboardCounts({
-    totalCount: jobs.length,
-    excellentCount: jobs.filter((job) => job.scoreTier === "excellent").length,
-    pendingCount: jobs.filter((job) => job.scoreTier === "pending").length,
-  });
+  const totalCount = jobs.length;
+  const excellentCount = jobs.filter(
+    (job) => job.scoreTier === "excellent",
+  ).length;
+  const pendingCount = jobs.filter((job) => job.scoreTier === "pending").length;
 
   return (
     <section
       aria-label="Resumen del panel"
       className="flex flex-row items-stretch rounded-md border border-border bg-surface px-2 py-3"
     >
-      <StatCell value={String(counts.total)} label="Ofertas" />
+      <StatCell value={String(totalCount)} label="Ofertas" />
       <Separator orientation="vertical" className="self-stretch" />
       <StatCell
-        value={String(counts.excellent)}
+        value={String(excellentCount)}
         label={`${TIER_LABELS.excellent}s`}
       />
       <Separator orientation="vertical" className="self-stretch" />
-      <StatCell value={String(counts.pending)} label={TIER_LABELS.pending} />
+      <StatCell value={String(pendingCount)} label={TIER_LABELS.pending} />
     </section>
   );
 }

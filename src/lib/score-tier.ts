@@ -1,5 +1,12 @@
 export type ScoreTier = "pending" | "excellent" | "worth" | "low";
 
+export const TIER_VALUES: ReadonlyArray<ScoreTier> = [
+  "excellent",
+  "worth",
+  "low",
+  "pending",
+];
+
 export const TIER_LABELS: Record<ScoreTier, string> = {
   excellent: "Excelente",
   worth: "Vale la pena",
