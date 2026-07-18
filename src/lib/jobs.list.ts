@@ -12,5 +12,7 @@ export async function listJobs(
   const rows = await prisma.jobOffer.findMany({
     orderBy: [{ aiAnalysis: { score: "desc" } }, { updatedAt: "desc" }],
   });
-  return rows.map((row) => toJobCardData(row as JobOfferRow));
+  return rows
+    .map((row) => toJobCardData(row as JobOfferRow))
+    .sort((left, right) => (right.score ?? -1) - (left.score ?? -1));
 }

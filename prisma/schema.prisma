@@ -15,8 +15,10 @@ model JobOffer {
   format         String      // e.g., Remote, Hybrid, On-site
   salary         String?
   linkedinUrl    String
-  description    String
+  description     String
   descriptionHash String?
+  gradedDescriptionHash String?
+  gradingLeaseUntil DateTime?
   requirements   String[]
   aiAnalysis     AiAnalysis?
   createdAt      DateTime    @default(now())

@@ -22,6 +22,8 @@ const mocks = vi.hoisted(() => {
           ...args.create,
           aiAnalysis: args.create.aiAnalysis ?? null,
           descriptionHash: args.create.descriptionHash ?? null,
+          gradedDescriptionHash: args.create.gradedDescriptionHash ?? null,
+          gradingLeaseUntil: args.create.gradingLeaseUntil ?? null,
           salary: args.create.salary ?? null,
           requirements: args.create.requirements ?? [],
           createdAt: args.create.createdAt ?? new Date(),
@@ -36,13 +38,33 @@ const mocks = vi.hoisted(() => {
       async (args: { where: { jobId: string } }) =>
         store.get(args.where.jobId) ?? null,
     ),
-    update: vi.fn(
-      async (args: { where: { jobId: string }; data: Partial<JobOffer> }) => {
-        const existing = store.get(args.where.jobId);
-        if (!existing) throw new Error("not found");
-        const merged = { ...existing, ...args.data };
-        store.set(args.where.jobId, merged);
-        return merged;
+    updateMany: vi.fn(
+      async (args: {
+        where: {
+          jobId?: string;
+          descriptionHash?: string | null;
+          gradingLeaseUntil?: Date | null;
+        };
+        data: Partial<JobOffer>;
+      }) => {
+        let count = 0;
+        for (const [jobId, row] of store) {
+          const leaseMatches =
+            args.where.gradingLeaseUntil === undefined ||
+            row.gradingLeaseUntil?.getTime() ===
+              args.where.gradingLeaseUntil?.getTime();
+          if (
+            (args.where.jobId === undefined ||
+              row.jobId === args.where.jobId) &&
+            (args.where.descriptionHash === undefined ||
+              row.descriptionHash === args.where.descriptionHash) &&
+            leaseMatches
+          ) {
+            store.set(jobId, { ...row, ...args.data });
+            count += 1;
+          }
+        }
+        return { count };
       },
     ),
     deleteMany: vi.fn(async (args?: { where?: { jobId?: string } }) => {
@@ -130,7 +152,7 @@ describe("E2E pipeline — webhook → upsert → grade → dashboard", () => {
     mocks.store.clear();
     mocks.jobOffer.upsert.mockClear();
     mocks.jobOffer.findMany.mockClear();
-    mocks.jobOffer.update.mockClear();
+    mocks.jobOffer.updateMany.mockClear();
     mocks.openRouterComplete.mockReset();
     (
       apifyClient.dataset as unknown as ReturnType<typeof vi.fn>

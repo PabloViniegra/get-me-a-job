@@ -23,7 +23,9 @@ function makeRow(overrides: Partial<JobOfferRow> = {}): JobOfferRow {
     salary: "EUR 60k-80k",
     format: "Remote",
     requirements: ["TypeScript", "React"],
-    descriptionHash: null,
+    descriptionHash: "hash-current",
+    gradedDescriptionHash: "hash-current",
+    gradingLeaseUntil: null,
     aiAnalysis: { score: 87, whyItFits: "Strong match." },
     createdAt: new Date("2026-01-01T00:00:00Z"),
     updatedAt: new Date("2026-01-02T00:00:00Z"),
@@ -73,6 +75,32 @@ describe("appRouter.jobs.list", () => {
         scoreTier: "excellent",
       },
     ]);
+  });
+
+  it("sorts stale analyses after current scored jobs", async () => {
+    vi.mocked(prisma.jobOffer.findMany).mockResolvedValue([
+      makeRow({
+        id: "stale",
+        jobId: "stale",
+        aiAnalysis: { score: 99, whyItFits: "Old" },
+        gradedDescriptionHash: "hash-previous",
+      }) as unknown as Awaited<
+        ReturnType<typeof prisma.jobOffer.findMany>
+      >[number],
+      makeRow({
+        id: "current",
+        jobId: "current",
+        aiAnalysis: { score: 50, whyItFits: "Current" },
+      }) as unknown as Awaited<
+        ReturnType<typeof prisma.jobOffer.findMany>
+      >[number],
+    ]);
+
+    const caller = createCaller(createTRPCContext());
+    const result = await caller.jobs.list();
+
+    expect(result.map((job) => job.jobId)).toEqual(["current", "stale"]);
+    expect(result[1]?.scoreTier).toBe("pending");
   });
 
   it("returns an empty array when findMany yields no rows", async () => {

@@ -11,7 +11,9 @@ function makeRow(overrides: Partial<JobOfferRow> = {}): JobOfferRow {
     salary: "EUR 60k-80k",
     format: "Remote",
     requirements: ["TypeScript", "React"],
-    descriptionHash: null,
+    descriptionHash: "hash-current",
+    gradedDescriptionHash: "hash-current",
+    gradingLeaseUntil: null,
     aiAnalysis: { score: 87, whyItFits: "Strong match." },
     createdAt: new Date("2026-01-01T00:00:00Z"),
     updatedAt: new Date("2026-01-02T00:00:00Z"),
@@ -50,6 +52,17 @@ describe("toJobCardData — tier rule", () => {
 
   it("maps a row with aiAnalysis=null to pending tier with null previews", () => {
     const result = toJobCardData(makeRow({ aiAnalysis: null }));
+
+    expect(result.hasAiAnalysis).toBe(false);
+    expect(result.score).toBeNull();
+    expect(result.scoreTier).toBe("pending");
+    expect(result.whyItFitsPreview).toBeNull();
+  });
+
+  it("hides an analysis graded against an older description", () => {
+    const result = toJobCardData(
+      makeRow({ gradedDescriptionHash: "hash-previous" }),
+    );
 
     expect(result.hasAiAnalysis).toBe(false);
     expect(result.score).toBeNull();

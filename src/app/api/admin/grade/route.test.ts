@@ -8,6 +8,8 @@ vi.mock("@/env", () => ({
 
 vi.mock("@/lib/grade-pending", () => ({
   gradePendingJobs: vi.fn(),
+  MAX_GRADE_LIMIT: 30,
+  MAX_GRADE_CONCURRENCY: 3,
 }));
 
 import { gradePendingJobs } from "@/lib/grade-pending";
@@ -15,9 +17,7 @@ import { POST } from "./route";
 
 function makeRequest(body: unknown, authHeader?: string) {
   const headers = new Headers({ "Content-Type": "application/json" });
-  if (authHeader) {
-    headers.set("Authorization", authHeader);
-  }
+  if (authHeader) headers.set("Authorization", authHeader);
 
   return new Request("http://localhost/api/admin/grade", {
     method: "POST",
@@ -43,14 +43,7 @@ describe("POST /api/admin/grade", () => {
     expect(response.status).toBe(401);
   });
 
-  it("calls gradePendingJobs with empty options when body is invalid JSON", async () => {
-    vi.mocked(gradePendingJobs).mockResolvedValue({
-      considered: 0,
-      succeeded: 0,
-      failed: 0,
-      errors: [],
-    });
-
+  it("returns 400 when the body is invalid JSON", async () => {
     const request = new Request("http://localhost/api/admin/grade", {
       method: "POST",
       headers: { Authorization: "Bearer test-admin-secret" },
@@ -59,33 +52,65 @@ describe("POST /api/admin/grade", () => {
 
     const response = await POST(request);
 
+    expect(response.status).toBe(400);
+    expect(gradePendingJobs).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { limit: 0 },
+    { limit: 31 },
+    { limit: 1.5 },
+    { concurrency: 0 },
+    { concurrency: 4 },
+    { concurrency: 1.5 },
+    { limit: "10" },
+  ])("returns 400 for invalid options: %o", async (body) => {
+    const response = await POST(makeRequest(body, "Bearer test-admin-secret"));
+
+    expect(response.status).toBe(400);
+    expect(gradePendingJobs).not.toHaveBeenCalled();
+  });
+
+  it("uses scheduler defaults for an empty object", async () => {
+    vi.mocked(gradePendingJobs).mockResolvedValue({
+      considered: 0,
+      succeeded: 0,
+      failed: 0,
+      skipped: 0,
+      errors: [],
+    });
+
+    const response = await POST(makeRequest({}, "Bearer test-admin-secret"));
+
     expect(response.status).toBe(200);
     expect(gradePendingJobs).toHaveBeenCalledWith({});
   });
 
-  it("passes limit and concurrency from the body to gradePendingJobs", async () => {
+  it("passes validated limit and concurrency to gradePendingJobs", async () => {
     vi.mocked(gradePendingJobs).mockResolvedValue({
       considered: 10,
-      succeeded: 8,
+      succeeded: 7,
       failed: 2,
+      skipped: 1,
       errors: [{ jobId: "x", reason: "timeout" }],
     });
 
     const response = await POST(
-      makeRequest({ limit: 10, concurrency: 5 }, "Bearer test-admin-secret"),
+      makeRequest({ limit: 10, concurrency: 3 }, "Bearer test-admin-secret"),
     );
 
     expect(response.status).toBe(200);
     expect(gradePendingJobs).toHaveBeenCalledWith({
       limit: 10,
-      concurrency: 5,
+      concurrency: 3,
     });
 
     const body = await response.json();
     expect(body).toEqual({
       considered: 10,
-      succeeded: 8,
+      succeeded: 7,
       failed: 2,
+      skipped: 1,
       errors: [{ jobId: "x", reason: "timeout" }],
     });
   });

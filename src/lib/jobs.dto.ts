@@ -29,6 +29,8 @@ export type JobOfferRow = {
   format: string;
   requirements: string[];
   descriptionHash: string | null;
+  gradedDescriptionHash: string | null;
+  gradingLeaseUntil: Date | null;
   aiAnalysis: { score: number; whyItFits: string } | null;
   createdAt: Date;
   updatedAt: Date;
@@ -57,7 +59,11 @@ function tierFor(aiAnalysis: JobOfferRow["aiAnalysis"]): ScoreTier {
 }
 
 export function toJobCardData(row: JobOfferRow): JobCardData {
-  const { aiAnalysis } = row;
+  const aiAnalysis =
+    row.descriptionHash !== null &&
+    row.gradedDescriptionHash === row.descriptionHash
+      ? row.aiAnalysis
+      : null;
   const hasAiAnalysis = aiAnalysis !== null;
   const score = aiAnalysis === null ? null : aiAnalysis.score;
 
