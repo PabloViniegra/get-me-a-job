@@ -11,6 +11,8 @@ export type DashboardFilters = {
   toggleFormat: (format: Format) => void;
   tiers: ReadonlyArray<ScoreTier>;
   toggleTier: (tier: ScoreTier) => void;
+  clearAll: () => void;
+  activeFacetCount: number;
 };
 
 export function useDashboardFilters(): DashboardFilters {
@@ -34,6 +36,12 @@ export function useDashboardFilters(): DashboardFilters {
     );
   }, []);
 
+  const clearAll = useCallback(() => {
+    setQuery("");
+    setFormats([]);
+    setTiers([]);
+  }, []);
+
   return {
     query,
     setQuery,
@@ -41,5 +49,7 @@ export function useDashboardFilters(): DashboardFilters {
     toggleFormat,
     tiers,
     toggleTier,
+    clearAll,
+    activeFacetCount: formats.length + tiers.length,
   };
 }

@@ -34,8 +34,16 @@ export function JobsDashboard() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const jobs = useQuery(trpc.jobs.list.queryOptions());
-  const { query, setQuery, formats, toggleFormat, tiers, toggleTier } =
-    useDashboardFilters();
+  const {
+    query,
+    setQuery,
+    formats,
+    toggleFormat,
+    tiers,
+    toggleTier,
+    clearAll,
+    activeFacetCount,
+  } = useDashboardFilters();
 
   const handleRetry = useCallback(() => {
     void queryClient.invalidateQueries(trpc.jobs.list.queryFilter());
@@ -94,6 +102,8 @@ export function JobsDashboard() {
           onToggleFormat={toggleFormat}
           tiers={tiers}
           onToggleTier={toggleTier}
+          activeFacetCount={activeFacetCount}
+          onClearAll={clearAll}
         />
       ) : null}
 
