@@ -72,7 +72,13 @@ export function JobsDashboard() {
   return (
     <section className="flex w-full max-w-7xl flex-col gap-4 p-4">
       <header className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-foreground">Ofertas</h1>
+        <h1 className="text-[28px] font-semibold leading-[1.2] tracking-[-0.02em] text-foreground">
+          Get{" "}
+          <span className="font-mono font-medium tracking-normal text-muted">
+            me
+          </span>{" "}
+          a job
+        </h1>
         <Button
           aria-label="Actualizar ofertas"
           variant="secondary"
