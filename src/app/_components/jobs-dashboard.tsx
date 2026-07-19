@@ -22,8 +22,8 @@ import { EmptyState } from "./empty-state";
 import { ErrorState } from "./error-state";
 import { FiltersEmptyState } from "./filters-empty-state";
 import { HeaderSubtitleSkeleton } from "./header-subtitle-skeleton";
-import { JobCard } from "./job-card";
 import { JobCardGridSkeleton } from "./job-card-grid-skeleton";
+import { JobCardList } from "./job-card-list";
 import { JobsFilterBar } from "./jobs-filter-bar";
 import { JobsFilterBarSkeleton } from "./jobs-filter-bar-skeleton";
 import { LoadMoreSentinel } from "./load-more-sentinel";
@@ -35,8 +35,6 @@ import { useDebouncedValue } from "./use-debounced-value";
 const PAGE_LIMIT = 24;
 const LOADING_SKELETON_COUNT = PAGE_LIMIT;
 const SEARCH_DEBOUNCE_MS = 300;
-const STAGGER_STEP_MS = 80;
-const STAGGER_INDEX_CAP = 6;
 
 type JobsListInput = Omit<JobsListParsed, "cursor"> & { cursor?: string };
 
@@ -226,24 +224,10 @@ export function JobsDashboard({ actions }: { actions?: ReactNode }) {
         ) : (
           <div className="flex flex-col gap-4">
             <h2 className="sr-only">Ofertas</h2>
-            <ul
-              aria-busy={jobs.isFetchingNextPage}
-              className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
-            >
-              {flatJobs.map((job, index) => (
-                <li
-                  key={job.id}
-                  className="motion-safe:animate-job-enter"
-                  style={{
-                    animationDelay: `${
-                      Math.min(index, STAGGER_INDEX_CAP) * STAGGER_STEP_MS
-                    }ms`,
-                  }}
-                >
-                  <JobCard data={job} />
-                </li>
-              ))}
-            </ul>
+            <JobCardList
+              jobs={flatJobs}
+              isFetchingNextPage={jobs.isFetchingNextPage}
+            />
             <LoadMoreSentinel
               onIntersect={() => {
                 if (jobs.hasNextPage && !jobs.isFetchingNextPage) {

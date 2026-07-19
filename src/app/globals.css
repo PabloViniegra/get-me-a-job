@@ -13,7 +13,6 @@
   --color-muted: var(--muted);
   --font-sans: var(--font-space-grotesk);
   --font-mono: var(--font-jetbrains-mono);
-  --animate-job-enter: job-enter 240ms ease-out both;
   --animate-glow-pulse: glow-pulse 2s ease-in-out infinite;
 }
 
@@ -29,17 +28,6 @@
 [data-theme="light"] {
   --muted: oklch(0.5 0.0138 285.94);
   --link: oklch(0.5 0.195 253.83);
-}
-
-@keyframes job-enter {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 @keyframes glow-pulse {
