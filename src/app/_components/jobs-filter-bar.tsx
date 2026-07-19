@@ -1,14 +1,12 @@
 "use client";
 
-import {
-  Button,
-  Input,
-  Label,
-  Separator,
-  TextField,
-  ToggleButton,
-  ToggleButtonGroup,
-} from "@heroui/react";
+import { Button } from "@heroui/react/button";
+import { Input } from "@heroui/react/input";
+import { Label } from "@heroui/react/label";
+import { Separator } from "@heroui/react/separator";
+import { TextField } from "@heroui/react/textfield";
+import { ToggleButton } from "@heroui/react/toggle-button";
+import { ToggleButtonGroup } from "@heroui/react/toggle-button-group";
 import { ChevronDown, X } from "lucide-react";
 import { useState } from "react";
 import { FORMAT_VALUES, type Format } from "@/lib/dashboard-filters";

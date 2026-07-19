@@ -1,6 +1,6 @@
 "use no memo";
 
-import { Chip } from "@heroui/react";
+import { Chip } from "@heroui/react/chip";
 import { Sparkles } from "lucide-react";
 import type { JSX } from "react";
 import { type ScoreTier, scoreTier, TIER_LABELS } from "@/lib/score-tier";

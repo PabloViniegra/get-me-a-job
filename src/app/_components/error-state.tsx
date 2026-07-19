@@ -1,6 +1,6 @@
 "use no memo";
 
-import { Button } from "@heroui/react";
+import { Button } from "@heroui/react/button";
 import { AlertCircle } from "lucide-react";
 
 type ErrorStateProps = {

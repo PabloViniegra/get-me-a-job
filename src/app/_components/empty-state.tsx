@@ -1,6 +1,6 @@
 "use no memo";
 
-import { Button } from "@heroui/react";
+import { Button } from "@heroui/react/button";
 import { Briefcase } from "lucide-react";
 
 type EmptyStateProps = {
