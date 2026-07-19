@@ -1,7 +1,7 @@
 "use client";
 "use no memo";
 
-import { Button } from "@heroui/react";
+import { Button } from "@heroui/react/button";
 import {
   keepPreviousData,
   useInfiniteQuery,
@@ -10,12 +10,10 @@ import {
 } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
 import { useCallback, useMemo } from "react";
-import { sileo } from "sileo";
 import type { Format } from "@/lib/dashboard-filters";
 import type { SortKey } from "@/lib/dashboard-sort";
 import { friendlyErrorMessage } from "@/lib/error-message";
 import { JOB_FORMATS, type JobsListParsed } from "@/lib/jobs.list.schema";
-import { relativeJobTime } from "@/lib/relative-time";
 import { useTRPC } from "@/trpc/client";
 import { DashboardStats } from "./dashboard-stats";
 import { DashboardStatsSkeleton } from "./dashboard-stats-skeleton";
@@ -27,6 +25,7 @@ import { JobCard } from "./job-card";
 import { JobsFilterBar } from "./jobs-filter-bar";
 import { JobsFilterBarSkeleton } from "./jobs-filter-bar-skeleton";
 import { LoadMoreSentinel } from "./load-more-sentinel";
+import { RelativeTime } from "./relative-time";
 import { useDashboardFilters } from "./use-dashboard-filters";
 import { useDashboardSort } from "./use-dashboard-sort";
 import { useDebouncedValue } from "./use-debounced-value";
@@ -90,7 +89,8 @@ export function JobsDashboard() {
     void jobs.refetch();
   }, [jobs]);
 
-  const handleRefresh = useCallback(() => {
+  const handleRefresh = useCallback(async () => {
+    const { sileo } = await import("sileo");
     void sileo.promise(
       queryClient.refetchQueries({
         queryKey: trpc.jobs.list.infiniteQueryKey(listInput),
@@ -155,9 +155,12 @@ export function JobsDashboard() {
             <p className="font-mono text-xs uppercase tracking-wider text-muted">
               dashboard · {subtitleLabel}{" "}
               {subtitleLabel === 1 ? "oferta" : "ofertas"}
-              {newestCreatedAt
-                ? ` · más reciente ${relativeJobTime(newestCreatedAt)}`
-                : ""}
+              {newestCreatedAt ? (
+                <>
+                  {" · más reciente "}
+                  <RelativeTime date={newestCreatedAt} />
+                </>
+              ) : null}
             </p>
           ) : null}
         </div>

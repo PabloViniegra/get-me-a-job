@@ -1,6 +1,6 @@
 "use no memo";
 
-import { Skeleton } from "@heroui/react";
+import { Skeleton } from "@heroui/react/skeleton";
 
 const VALUE_HEIGHT = "h-7";
 const LABEL_HEIGHT = "h-4";

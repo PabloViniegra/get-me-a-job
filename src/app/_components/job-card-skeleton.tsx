@@ -1,6 +1,7 @@
 "use no memo";
 
-import { Card, Skeleton } from "@heroui/react";
+import { Card } from "@heroui/react/card";
+import { Skeleton } from "@heroui/react/skeleton";
 
 const TITLE_HEIGHT = "h-[22px]";
 const BODY_HEIGHT = "h-[21px]";

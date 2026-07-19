@@ -1,11 +1,12 @@
 "use client";
 "use no memo";
 
-import { Card, Link } from "@heroui/react";
+import { Card } from "@heroui/react/card";
+import { Link } from "@heroui/react/link";
 import { Clock, ExternalLink } from "lucide-react";
 import type { JobCardData } from "@/lib/jobs.dto";
-import { relativeJobTime } from "@/lib/relative-time";
 import { MatchScoreChip } from "./match-score-chip";
+import { RelativeTime } from "./relative-time";
 
 type JobCardProps = { data: JobCardData };
 
@@ -73,7 +74,7 @@ export function JobCard({ data }: JobCardProps) {
       <Card.Footer className="flex flex-row items-center justify-between gap-3">
         <span className="flex items-center gap-1.5 font-mono text-xs tabular-nums text-muted">
           <Clock aria-hidden="true" size={12} />
-          {relativeJobTime(data.createdAt)}
+          <RelativeTime date={data.createdAt} />
         </span>
         {linkedinHref ? (
           <Link

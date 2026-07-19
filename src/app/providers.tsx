@@ -3,13 +3,18 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
+import dynamic from "next/dynamic";
 import { ThemeProvider } from "next-themes";
 import { useState } from "react";
-import { Toaster } from "sileo";
 import superjson from "superjson";
 import { TRPCProvider } from "@/trpc/client";
 import { makeQueryClient } from "@/trpc/query-client";
 import type { AppRouter } from "@/trpc/routers/_app";
+
+const Toaster = dynamic(
+  () => import("sileo").then((m) => ({ default: m.Toaster })),
+  { ssr: false },
+);
 
 let browserQueryClient: QueryClient | undefined;
 
