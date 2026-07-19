@@ -35,6 +35,10 @@ const STAGGER_INDEX_CAP = 6;
 
 type JobsListInput = Omit<JobsListParsed, "cursor"> & { cursor?: string };
 
+function ensureDate(value: Date | string): Date {
+  return value instanceof Date ? value : new Date(value);
+}
+
 function buildListInput(
   query: string,
   formats: ReadonlyArray<Format>,
@@ -112,7 +116,11 @@ export function JobsDashboard({ firstPage, summary }: JobsDashboardProps) {
   }, [queryClient, trpc, listInput]);
 
   const flatJobs = useMemo(
-    () => jobs.data?.pages.flatMap((page) => page.items) ?? [],
+    () =>
+      (jobs.data?.pages.flatMap((page) => page.items) ?? []).map((job) => ({
+        ...job,
+        createdAt: ensureDate(job.createdAt),
+      })),
     [jobs.data],
   );
 
