@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/env", () => ({
   env: {
     APIFY_WEBHOOK_SECRET: "test-webhook-secret",
+    APIFY_ADMIN_SECRET: "test-admin-secret",
     OPENROUTER_MODEL: "test-model",
   },
 }));
@@ -27,10 +28,26 @@ vi.mock("@/lib/openrouter", () => ({
   openRouterClient: { complete: vi.fn() },
 }));
 
+vi.mock("./trigger-grade", () => ({
+  fireGradingTrigger: vi.fn(),
+}));
+
+vi.mock("next/server", async () => {
+  const actual =
+    await vi.importActual<typeof import("next/server")>("next/server");
+  return {
+    ...actual,
+    after: vi.fn((cb: () => void | Promise<void>) => {
+      void cb();
+    }),
+  };
+});
+
 import { apifyClient } from "@/lib/apify";
 import { gradeJob } from "@/lib/grader";
 import { prisma } from "@/lib/prisma";
 import { POST } from "./route";
+import { fireGradingTrigger } from "./trigger-grade";
 
 function mockDataset(items: unknown[]) {
   const listItems = vi.fn().mockResolvedValue({ items });
@@ -252,5 +269,50 @@ describe("POST /api/webhooks/apify", () => {
     );
 
     expect(gradeJob).not.toHaveBeenCalled();
+  });
+
+  it("triggers the grading endpoint after a successful ingestion (ADR-0006)", async () => {
+    const item = {
+      jobId: "1",
+      jobUrl: "https://example.com/1",
+      jobTitle: "Any",
+      jobDescription: "Any",
+    };
+    mockDataset([item]);
+
+    await POST(
+      makeRequest(
+        {
+          eventType: "ACTOR.RUN.SUCCEEDED",
+          resource: { defaultDatasetId: "dataset-trigger" },
+        },
+        "Bearer test-webhook-secret",
+      ),
+    );
+
+    expect(fireGradingTrigger).toHaveBeenCalledTimes(1);
+    const [baseUrl, secret] = vi.mocked(fireGradingTrigger).mock.calls[0] as [
+      string,
+      string,
+    ];
+    expect(baseUrl).toBe("http://localhost/api/webhooks/apify");
+    expect(secret).toBe("test-admin-secret");
+  });
+
+  it("does NOT trigger grading on non-SUCCEEDED events", async () => {
+    await POST(
+      makeRequest(
+        { eventType: "ACTOR.RUN.FAILED" },
+        "Bearer test-webhook-secret",
+      ),
+    );
+
+    expect(fireGradingTrigger).not.toHaveBeenCalled();
+  });
+
+  it("does NOT trigger grading when auth fails", async () => {
+    await POST(makeRequest({ eventType: "ACTOR.RUN.SUCCEEDED" }));
+
+    expect(fireGradingTrigger).not.toHaveBeenCalled();
   });
 });

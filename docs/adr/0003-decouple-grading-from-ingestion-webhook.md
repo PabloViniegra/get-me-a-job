@@ -1,10 +1,16 @@
 # ADR-0003: Decouple LLM grading from the Apify ingestion webhook
 
-**Status:** Accepted (2026-07-18)
+**Status:** Partially superseded by [ADR-0006](./0006-automatic-grading-trigger-from-webhook.md) (trigger model only — the decoupling decision still stands).
 **Deciders:** Pablo Viniegra
 **Supersedes:** [ADR-0002](./0002-inline-grading-in-ingestion-webhook.md)
 **Related:** [ADR-0001](./0001-description-hash-on-joboffer.md) (hash-gated grading);
 PRD Epic 2 / FR-2.1.
+
+> **Note (2026-07-19):** ADR-0006 pins the trigger model as automatic and in-code
+> (`after()`-scheduled `POST /api/admin/grade` from inside the webhook) instead
+> of leaving it as "operational, not architectural". The decoupling decision
+> (webhook = pure upsert pipeline; grading = independent admin endpoint) is
+> unchanged.
 
 ## Context
 

@@ -107,6 +107,19 @@ vi.mock("@/lib/openrouter", () => ({
 
 vi.mock("@/lib/prisma", () => ({ prisma: { jobOffer: mocks.jobOffer } }));
 
+vi.mock("@/app/api/webhooks/apify/trigger-grade", () => ({
+  fireGradingTrigger: vi.fn(),
+}));
+
+vi.mock("next/server", async () => {
+  const actual =
+    await vi.importActual<typeof import("next/server")>("next/server");
+  return {
+    ...actual,
+    after: vi.fn(),
+  };
+});
+
 const { appRouter } = await import("@/trpc/routers/_app");
 const { createCallerFactory, createTRPCContext } = await import("@/trpc/init");
 const { POST: webhookPOST } = await import("@/app/api/webhooks/apify/route");

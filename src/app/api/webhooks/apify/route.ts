@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { env } from "@/env";
 import { apifyClient } from "@/lib/apify";
 import type { ApifyLinkedInJobItem } from "@/lib/apify-mapper";
@@ -6,6 +6,7 @@ import { mapApifyItemToJobOffer } from "@/lib/apify-mapper";
 import { isBearerAuthorized } from "@/lib/auth";
 import { log } from "@/lib/log";
 import { prisma } from "@/lib/prisma";
+import { fireGradingTrigger } from "./trigger-grade";
 
 const MAX_WEBHOOK_BODY_BYTES = 64 * 1024;
 
@@ -62,6 +63,10 @@ export async function POST(request: Request) {
       update: fields,
     });
   }
+
+  after(() => {
+    void fireGradingTrigger(request.url, env.APIFY_ADMIN_SECRET);
+  });
 
   return NextResponse.json({ ok: true, skipped }, { status: 200 });
 }
