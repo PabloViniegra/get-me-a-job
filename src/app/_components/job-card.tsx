@@ -56,7 +56,8 @@ export function JobCard({ data }: JobCardProps) {
         <p className="font-mono text-sm leading-[1.5] tabular-nums text-foreground">
           {data.salary ?? (
             <span className="text-muted" title="Salario no publicado">
-              {SALARY_MISSING}
+              <span aria-hidden="true">{SALARY_MISSING}</span>
+              <span className="sr-only">Salario no publicado</span>
             </span>
           )}
         </p>
@@ -81,7 +82,8 @@ export function JobCard({ data }: JobCardProps) {
             href={linkedinHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs"
+            aria-label={`Ver "${data.title}" en LinkedIn (se abre en una pestaña nueva)`}
+            className="inline-flex items-center gap-1.5 py-1 text-xs"
           >
             LinkedIn
             <ExternalLink aria-hidden="true" size={12} strokeWidth={2} />

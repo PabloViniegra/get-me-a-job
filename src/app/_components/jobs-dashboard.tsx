@@ -210,13 +210,17 @@ export function JobsDashboard() {
           onRetry={handleRetry}
         />
       ) : jobs.isPending && !jobs.data ? (
-        <JobCardGridSkeleton count={LOADING_SKELETON_COUNT} />
+        <output>
+          <span className="sr-only">Cargando ofertas…</span>
+          <JobCardGridSkeleton count={LOADING_SKELETON_COUNT} />
+        </output>
       ) : !hasAnyResults && (isActive || debouncedQuery.length > 0) ? (
         <FiltersEmptyState onClearFilters={clearAll} />
       ) : !hasAnyResults ? (
         <EmptyState onRetry={handleRetry} />
       ) : (
         <div className="flex flex-col gap-4">
+          <h2 className="sr-only">Ofertas</h2>
           <ul
             aria-busy={jobs.isFetchingNextPage}
             className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"

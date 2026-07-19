@@ -58,7 +58,8 @@ export function MatchScoreChip({
   if (tier === "pending") {
     return (
       <span className={classes.container} title="Aún sin analizar">
-        {TIER_LABELS.pending}
+        <span aria-hidden="true">{TIER_LABELS.pending}</span>
+        <span className="sr-only">Aún sin analizar</span>
       </span>
     );
   }
@@ -66,7 +67,8 @@ export function MatchScoreChip({
   if (tier === "low") {
     return (
       <span className={classes.container} title={`Match ${score} sobre 100`}>
-        {score}
+        <span aria-hidden="true">{score}</span>
+        <span className="sr-only">{`Match ${score} sobre 100`}</span>
       </span>
     );
   }
@@ -78,20 +80,23 @@ export function MatchScoreChip({
       prefix
     ) : null;
 
+  const label =
+    tier === "excellent"
+      ? `Match excelente: ${score} sobre 100`
+      : `Match ${score} sobre 100`;
+
   return (
-    <Chip
-      className={classes.container}
-      title={
-        tier === "excellent"
-          ? `Match excelente: ${score} sobre 100`
-          : `Match ${score} sobre 100`
-      }
-    >
+    <Chip className={classes.container} title={label}>
       {leading}
       {tier === "excellent" ? (
-        <span className="text-xs font-medium">{TIER_LABELS.excellent}</span>
+        <span aria-hidden="true" className="text-xs font-medium">
+          {TIER_LABELS.excellent}
+        </span>
       ) : null}
-      <span className={classes.text}>{score}</span>
+      <span aria-hidden="true" className={classes.text}>
+        {score}
+      </span>
+      <span className="sr-only">{label}</span>
     </Chip>
   );
 }
