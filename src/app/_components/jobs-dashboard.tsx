@@ -204,61 +204,63 @@ export function JobsDashboard() {
         </p>
       ) : null}
 
-      {jobs.isError ? (
-        <ErrorState
-          errorMessage={friendlyErrorMessage(jobs.error?.message ?? "")}
-          onRetry={handleRetry}
-        />
-      ) : jobs.isPending && !jobs.data ? (
-        <output>
-          <span className="sr-only">Cargando ofertas…</span>
-          <JobCardGridSkeleton count={LOADING_SKELETON_COUNT} />
-        </output>
-      ) : !hasAnyResults && (isActive || debouncedQuery.length > 0) ? (
-        <FiltersEmptyState onClearFilters={clearAll} />
-      ) : !hasAnyResults ? (
-        <EmptyState onRetry={handleRetry} />
-      ) : (
-        <div className="flex flex-col gap-4">
-          <h2 className="sr-only">Ofertas</h2>
-          <ul
-            aria-busy={jobs.isFetchingNextPage}
-            className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
-          >
-            {flatJobs.map((job, index) => (
-              <li
-                key={job.id}
-                className="motion-safe:animate-job-enter"
-                style={{
-                  animationDelay: `${
-                    Math.min(index, STAGGER_INDEX_CAP) * STAGGER_STEP_MS
-                  }ms`,
-                }}
-              >
-                <JobCard data={job} />
-              </li>
-            ))}
-          </ul>
-          <LoadMoreSentinel
-            onIntersect={() => {
-              if (jobs.hasNextPage && !jobs.isFetchingNextPage) {
-                void jobs.fetchNextPage();
-              }
-            }}
-            enabled={jobs.hasNextPage === true && !jobs.isFetchingNextPage}
+      <section id="ofertas" tabIndex={-1}>
+        {jobs.isError ? (
+          <ErrorState
+            errorMessage={friendlyErrorMessage(jobs.error?.message ?? "")}
+            onRetry={handleRetry}
           />
-          {!jobs.hasNextPage && flatJobs.length > 0 ? (
-            <p className="text-center text-sm text-muted">
-              Has llegado al final de la lista.
-            </p>
-          ) : null}
-          {jobs.isFetchingNextPage ? (
-            <p className="text-center text-sm text-muted">
-              Cargando más ofertas…
-            </p>
-          ) : null}
-        </div>
-      )}
+        ) : jobs.isPending && !jobs.data ? (
+          <output>
+            <span className="sr-only">Cargando ofertas…</span>
+            <JobCardGridSkeleton count={LOADING_SKELETON_COUNT} />
+          </output>
+        ) : !hasAnyResults && (isActive || debouncedQuery.length > 0) ? (
+          <FiltersEmptyState onClearFilters={clearAll} />
+        ) : !hasAnyResults ? (
+          <EmptyState onRetry={handleRetry} />
+        ) : (
+          <div className="flex flex-col gap-4">
+            <h2 className="sr-only">Ofertas</h2>
+            <ul
+              aria-busy={jobs.isFetchingNextPage}
+              className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
+            >
+              {flatJobs.map((job, index) => (
+                <li
+                  key={job.id}
+                  className="motion-safe:animate-job-enter"
+                  style={{
+                    animationDelay: `${
+                      Math.min(index, STAGGER_INDEX_CAP) * STAGGER_STEP_MS
+                    }ms`,
+                  }}
+                >
+                  <JobCard data={job} />
+                </li>
+              ))}
+            </ul>
+            <LoadMoreSentinel
+              onIntersect={() => {
+                if (jobs.hasNextPage && !jobs.isFetchingNextPage) {
+                  void jobs.fetchNextPage();
+                }
+              }}
+              enabled={jobs.hasNextPage === true && !jobs.isFetchingNextPage}
+            />
+            {!jobs.hasNextPage && flatJobs.length > 0 ? (
+              <p className="text-center text-sm text-muted">
+                Has llegado al final de la lista.
+              </p>
+            ) : null}
+            {jobs.isFetchingNextPage ? (
+              <p className="text-center text-sm text-muted">
+                Cargando más ofertas…
+              </p>
+            ) : null}
+          </div>
+        )}
+      </section>
     </section>
   );
 }
