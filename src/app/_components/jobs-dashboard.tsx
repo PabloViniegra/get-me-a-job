@@ -9,6 +9,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo } from "react";
 import type { Format } from "@/lib/dashboard-filters";
 import type { SortKey } from "@/lib/dashboard-sort";
@@ -58,7 +59,7 @@ function buildListInput(
   };
 }
 
-export function JobsDashboard() {
+export function JobsDashboard({ actions }: { actions?: ReactNode }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
@@ -163,15 +164,18 @@ export function JobsDashboard() {
             </p>
           ) : null}
         </div>
-        <Button
-          aria-label="Actualizar ofertas"
-          variant="secondary"
-          onPress={handleRefresh}
-          isDisabled={jobs.isFetching}
-        >
-          <RefreshCw size={16} aria-hidden="true" />
-          Actualizar
-        </Button>
+        <div className="flex items-center gap-3">
+          {actions}
+          <Button
+            aria-label="Actualizar ofertas"
+            variant="secondary"
+            onPress={handleRefresh}
+            isDisabled={jobs.isFetching}
+          >
+            <RefreshCw size={16} aria-hidden="true" />
+            Actualizar
+          </Button>
+        </div>
       </header>
 
       {summary.isPending ? (

@@ -1,9 +1,10 @@
+import { CvInfo } from "./_components/cv-info";
 import { JobsDashboard } from "./_components/jobs-dashboard";
 
 export default function Home() {
   return (
     <main className="flex flex-1 flex-col items-center font-sans">
-      <JobsDashboard />
+      <JobsDashboard actions={<CvInfo />} />
     </main>
   );
 }
