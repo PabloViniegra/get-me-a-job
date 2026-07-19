@@ -11,6 +11,7 @@ import {
   type JobsSummary,
 } from "@/lib/jobs.list.schema";
 import { prisma as defaultPrisma } from "@/lib/prisma";
+import { type ScoreTier, TIER_VALUES } from "@/lib/score-tier";
 
 type JobOrderBy = Prisma.JobOfferOrderByWithRelationInput[];
 
@@ -28,6 +29,35 @@ export type ListJobsResult = {
 
 function buildOrderBy(sortKey: JobsListParsed["sortKey"]): JobOrderBy {
   return sortKey === "createdAt" ? CREATED_AT_ORDER_BY : DEFAULT_ORDER_BY;
+}
+
+function buildTierWhere(
+  tiers: ReadonlyArray<ScoreTier>,
+): Prisma.JobOfferWhereInput | undefined {
+  if (tiers.length === 0 || tiers.length >= TIER_VALUES.length)
+    return undefined;
+
+  const clauses: Prisma.JobOfferWhereInput[] = [];
+  for (const tier of tiers) {
+    switch (tier) {
+      case "pending":
+        clauses.push({ aiAnalysis: { equals: null } });
+        break;
+      case "excellent":
+        clauses.push({ aiAnalysis: { is: { score: { gte: 85 } } } });
+        break;
+      case "worth":
+        clauses.push({ aiAnalysis: { is: { score: { gte: 65, lt: 85 } } } });
+        break;
+      case "low":
+        clauses.push({ aiAnalysis: { is: { score: { lt: 65 } } } });
+        break;
+    }
+  }
+
+  if (clauses.length === 0) return undefined;
+  if (clauses.length === 1) return clauses[0];
+  return { OR: clauses };
 }
 
 function buildWhere(
@@ -48,6 +78,8 @@ function buildWhere(
       clauses.push({ format: { in: allowed } });
     }
   }
+  const tierWhere = buildTierWhere(parsed.tiers ?? []);
+  if (tierWhere) clauses.push(tierWhere);
   if (clauses.length === 0) return undefined;
   return clauses.length === 1
     ? (clauses[0] as Prisma.JobOfferWhereInput)

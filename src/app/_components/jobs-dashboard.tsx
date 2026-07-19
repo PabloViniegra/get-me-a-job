@@ -9,7 +9,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import type { Format } from "@/lib/dashboard-filters";
 import type { SortKey } from "@/lib/dashboard-sort";
 import { friendlyErrorMessage } from "@/lib/error-message";
@@ -32,7 +32,7 @@ import { useDashboardSort } from "./use-dashboard-sort";
 import { useDebouncedValue } from "./use-debounced-value";
 
 const PAGE_LIMIT = 24;
-const LOADING_SKELETON_COUNT = 6;
+const LOADING_SKELETON_COUNT = PAGE_LIMIT;
 const SEARCH_DEBOUNCE_MS = 300;
 const STAGGER_STEP_MS = 80;
 const STAGGER_INDEX_CAP = 6;
@@ -42,6 +42,7 @@ type JobsListInput = Omit<JobsListParsed, "cursor"> & { cursor?: string };
 function buildListInput(
   query: string,
   formats: ReadonlyArray<Format>,
+  tiers: ReadonlyArray<string>,
   sortKey: SortKey,
 ): JobsListInput {
   const trimmedQuery = query.trim();
@@ -52,6 +53,7 @@ function buildListInput(
       formats.length > 0 && formats.length < JOB_FORMATS.length
         ? [...formats]
         : undefined,
+    tiers: tiers.length > 0 ? (tiers as JobsListInput["tiers"]) : undefined,
     sortKey,
   };
 }
@@ -59,6 +61,10 @@ function buildListInput(
 export function JobsDashboard() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    void import("@/lib/relative-time");
+  }, []);
   const {
     query,
     setQuery,
@@ -75,8 +81,8 @@ export function JobsDashboard() {
   const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
 
   const listInput = useMemo(
-    () => buildListInput(debouncedQuery, formats, sortKey),
-    [debouncedQuery, formats, sortKey],
+    () => buildListInput(debouncedQuery, formats, tiers, sortKey),
+    [debouncedQuery, formats, tiers, sortKey],
   );
 
   const jobs = useInfiniteQuery({
@@ -110,14 +116,6 @@ export function JobsDashboard() {
     [jobs.data],
   );
 
-  const tierFilteredJobs = useMemo(
-    () =>
-      tiers.length === 0
-        ? flatJobs
-        : flatJobs.filter((job) => tiers.includes(job.scoreTier)),
-    [flatJobs, tiers],
-  );
-
   const newestCreatedAt = useMemo(
     () =>
       flatJobs.reduce<Date | null>(
@@ -131,7 +129,6 @@ export function JobsDashboard() {
   );
 
   const hasAnyResults = flatJobs.length > 0;
-  const tierFilterHasNoMatches = hasAnyResults && tierFilteredJobs.length === 0;
   const totalOfferts = summary.data?.total;
   const subtitleLabel =
     totalOfferts !== undefined
@@ -189,7 +186,7 @@ export function JobsDashboard() {
         <JobsFilterBar
           value={query}
           onChange={setQuery}
-          resultCount={tierFilteredJobs.length}
+          resultCount={flatJobs.length}
           formats={formats}
           onToggleFormat={toggleFormat}
           tiers={tiers}
@@ -203,7 +200,7 @@ export function JobsDashboard() {
 
       {isActive && subtitleLabel !== null ? (
         <p aria-live="polite" className="text-sm text-muted">
-          Mostrando {tierFilteredJobs.length} de {subtitleLabel} ofertas
+          Mostrando {flatJobs.length} de {subtitleLabel} ofertas
         </p>
       ) : null}
 
@@ -224,7 +221,7 @@ export function JobsDashboard() {
             aria-busy={jobs.isFetchingNextPage}
             className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
           >
-            {tierFilteredJobs.map((job, index) => (
+            {flatJobs.map((job, index) => (
               <li
                 key={job.id}
                 className="motion-safe:animate-job-enter"
@@ -238,19 +235,15 @@ export function JobsDashboard() {
               </li>
             ))}
           </ul>
-          {tierFilterHasNoMatches ? (
-            <FiltersEmptyState onClearFilters={clearAll} />
-          ) : (
-            <LoadMoreSentinel
-              onIntersect={() => {
-                if (jobs.hasNextPage && !jobs.isFetchingNextPage) {
-                  void jobs.fetchNextPage();
-                }
-              }}
-              enabled={jobs.hasNextPage === true && !jobs.isFetchingNextPage}
-            />
-          )}
-          {!jobs.hasNextPage && tierFilteredJobs.length > 0 ? (
+          <LoadMoreSentinel
+            onIntersect={() => {
+              if (jobs.hasNextPage && !jobs.isFetchingNextPage) {
+                void jobs.fetchNextPage();
+              }
+            }}
+            enabled={jobs.hasNextPage === true && !jobs.isFetchingNextPage}
+          />
+          {!jobs.hasNextPage && flatJobs.length > 0 ? (
             <p className="text-center text-sm text-muted">
               Has llegado al final de la lista.
             </p>

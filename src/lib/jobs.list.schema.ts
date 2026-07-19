@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TIER_VALUES } from "@/lib/score-tier";
 
 export const JOB_FORMATS = ["Remote", "Hybrid", "On-site"] as const;
 export type JobFormat = (typeof JOB_FORMATS)[number];
@@ -25,6 +26,7 @@ export const jobsListInputSchema = z.object({
     .optional(),
   formats: z.array(z.enum(JOB_FORMATS)).max(JOB_FORMATS.length).optional(),
   sortKey: z.enum(JOB_SORT_KEYS).default("score"),
+  tiers: z.array(z.enum(TIER_VALUES)).max(TIER_VALUES.length).optional(),
 });
 
 export type JobsListInput = z.input<typeof jobsListInputSchema>;

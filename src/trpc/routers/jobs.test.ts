@@ -111,6 +111,86 @@ describe("appRouter.jobs.list", () => {
     );
   });
 
+  it("includes the tier filter for a single tier (excellent)", async () => {
+    vi.mocked(prisma.jobOffer.findMany).mockResolvedValue([]);
+
+    const caller = createCaller(createTRPCContext());
+    await caller.jobs.list({ tiers: ["excellent"] });
+
+    expect(prisma.jobOffer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { aiAnalysis: { is: { score: { gte: 85 } } } },
+      }),
+    );
+  });
+
+  it("ORs tier conditions when multiple tiers are selected", async () => {
+    vi.mocked(prisma.jobOffer.findMany).mockResolvedValue([]);
+
+    const caller = createCaller(createTRPCContext());
+    await caller.jobs.list({ tiers: ["excellent", "worth"] });
+
+    expect(prisma.jobOffer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          OR: [
+            { aiAnalysis: { is: { score: { gte: 85 } } } },
+            { aiAnalysis: { is: { score: { gte: 65, lt: 85 } } } },
+          ],
+        },
+      }),
+    );
+  });
+
+  it("treats all four tiers as no-op (matches everything)", async () => {
+    vi.mocked(prisma.jobOffer.findMany).mockResolvedValue([]);
+
+    const caller = createCaller(createTRPCContext());
+    await caller.jobs.list({
+      tiers: ["pending", "excellent", "worth", "low"],
+    });
+
+    expect(prisma.jobOffer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: undefined }),
+    );
+  });
+
+  it("treats 'pending' as aiAnalysis: { equals: null }", async () => {
+    vi.mocked(prisma.jobOffer.findMany).mockResolvedValue([]);
+
+    const caller = createCaller(createTRPCContext());
+    await caller.jobs.list({ tiers: ["pending"] });
+
+    expect(prisma.jobOffer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { aiAnalysis: { equals: null } },
+      }),
+    );
+  });
+
+  it("ANDs tier filter with format and query when all three are present", async () => {
+    vi.mocked(prisma.jobOffer.findMany).mockResolvedValue([]);
+
+    const caller = createCaller(createTRPCContext());
+    await caller.jobs.list({
+      query: "typescript",
+      formats: ["Remote"],
+      tiers: ["excellent"],
+    });
+
+    expect(prisma.jobOffer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          AND: [
+            { title: { contains: "typescript", mode: "insensitive" } },
+            { format: { in: ["Remote"] } },
+            { aiAnalysis: { is: { score: { gte: 85 } } } },
+          ],
+        },
+      }),
+    );
+  });
+
   it("switches to createdAt order when requested", async () => {
     vi.mocked(prisma.jobOffer.findMany).mockResolvedValue([]);
 
