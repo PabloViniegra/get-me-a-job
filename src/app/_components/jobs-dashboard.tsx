@@ -28,6 +28,7 @@ import { JobsFilterBar } from "./jobs-filter-bar";
 import { JobsFilterBarSkeleton } from "./jobs-filter-bar-skeleton";
 import { LoadMoreSentinel } from "./load-more-sentinel";
 import { RelativeTime } from "./relative-time";
+import { ThemeToggle } from "./theme-toggle";
 import { useDashboardFilters } from "./use-dashboard-filters";
 import { useDashboardSort } from "./use-dashboard-sort";
 import { useDebouncedValue } from "./use-debounced-value";
@@ -173,6 +174,7 @@ export function JobsDashboard({ actions }: { actions?: ReactNode }) {
             <RefreshCw size={16} aria-hidden="true" />
             Actualizar
           </Button>
+          <ThemeToggle />
         </div>
       </header>
 
