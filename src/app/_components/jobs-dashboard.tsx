@@ -5,6 +5,7 @@ import { Button } from "@heroui/react";
 import {
   keepPreviousData,
   useInfiniteQuery,
+  useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
@@ -13,16 +14,18 @@ import { sileo } from "sileo";
 import type { Format } from "@/lib/dashboard-filters";
 import type { SortKey } from "@/lib/dashboard-sort";
 import { friendlyErrorMessage } from "@/lib/error-message";
-import type { ListJobsResult } from "@/lib/jobs.list";
 import { JOB_FORMATS, type JobsListParsed } from "@/lib/jobs.list.schema";
 import { relativeJobTime } from "@/lib/relative-time";
 import { useTRPC } from "@/trpc/client";
 import { DashboardStats } from "./dashboard-stats";
+import { DashboardStatsSkeleton } from "./dashboard-stats-skeleton";
 import { EmptyState } from "./empty-state";
 import { ErrorState } from "./error-state";
 import { FiltersEmptyState } from "./filters-empty-state";
+import { HeaderSubtitleSkeleton } from "./header-subtitle-skeleton";
 import { JobCard } from "./job-card";
 import { JobsFilterBar } from "./jobs-filter-bar";
+import { JobsFilterBarSkeleton } from "./jobs-filter-bar-skeleton";
 import { LoadMoreSentinel } from "./load-more-sentinel";
 import { useDashboardFilters } from "./use-dashboard-filters";
 import { useDashboardSort } from "./use-dashboard-sort";
@@ -34,10 +37,6 @@ const STAGGER_STEP_MS = 80;
 const STAGGER_INDEX_CAP = 6;
 
 type JobsListInput = Omit<JobsListParsed, "cursor"> & { cursor?: string };
-
-function ensureDate(value: Date | string): Date {
-  return value instanceof Date ? value : new Date(value);
-}
 
 function buildListInput(
   query: string,
@@ -56,12 +55,7 @@ function buildListInput(
   };
 }
 
-type JobsDashboardProps = {
-  firstPage: ListJobsResult;
-  summary: { total: number; excellent: number; pending: number };
-};
-
-export function JobsDashboard({ firstPage, summary }: JobsDashboardProps) {
+export function JobsDashboard() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const {
@@ -88,15 +82,9 @@ export function JobsDashboard({ firstPage, summary }: JobsDashboardProps) {
     ...trpc.jobs.list.infiniteQueryOptions(listInput, {
       getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     }),
-    initialPageParam: null as string | null,
-    initialData:
-      listInput.query === undefined &&
-      listInput.formats === undefined &&
-      listInput.sortKey === "score"
-        ? { pages: [firstPage], pageParams: [null] }
-        : undefined,
     placeholderData: keepPreviousData,
   });
+  const summary = useQuery(trpc.jobs.summary.queryOptions());
 
   const handleRetry = useCallback(() => {
     void jobs.refetch();
@@ -116,11 +104,7 @@ export function JobsDashboard({ firstPage, summary }: JobsDashboardProps) {
   }, [queryClient, trpc, listInput]);
 
   const flatJobs = useMemo(
-    () =>
-      (jobs.data?.pages.flatMap((page) => page.items) ?? []).map((job) => ({
-        ...job,
-        createdAt: ensureDate(job.createdAt),
-      })),
+    () => jobs.data?.pages.flatMap((page) => page.items) ?? [],
     [jobs.data],
   );
 
@@ -146,7 +130,13 @@ export function JobsDashboard({ firstPage, summary }: JobsDashboardProps) {
 
   const hasAnyResults = flatJobs.length > 0;
   const tierFilterHasNoMatches = hasAnyResults && tierFilteredJobs.length === 0;
-  const subtitleLabel = summary.total;
+  const totalOfferts = summary.data?.total;
+  const subtitleLabel =
+    totalOfferts !== undefined
+      ? totalOfferts
+      : flatJobs.length > 0
+        ? flatJobs.length
+        : null;
 
   return (
     <section className="flex w-full max-w-7xl flex-col gap-4 p-4">
@@ -159,13 +149,17 @@ export function JobsDashboard({ firstPage, summary }: JobsDashboardProps) {
             </span>{" "}
             a job
           </h1>
-          <p className="font-mono text-xs uppercase tracking-wider text-muted">
-            dashboard · {subtitleLabel}{" "}
-            {subtitleLabel === 1 ? "oferta" : "ofertas"}
-            {newestCreatedAt
-              ? ` · más reciente ${relativeJobTime(newestCreatedAt)}`
-              : ""}
-          </p>
+          {summary.isPending && !summary.data ? (
+            <HeaderSubtitleSkeleton />
+          ) : subtitleLabel !== null ? (
+            <p className="font-mono text-xs uppercase tracking-wider text-muted">
+              dashboard · {subtitleLabel}{" "}
+              {subtitleLabel === 1 ? "oferta" : "ofertas"}
+              {newestCreatedAt
+                ? ` · más reciente ${relativeJobTime(newestCreatedAt)}`
+                : ""}
+            </p>
+          ) : null}
         </div>
         <Button
           aria-label="Actualizar ofertas"
@@ -178,23 +172,31 @@ export function JobsDashboard({ firstPage, summary }: JobsDashboardProps) {
         </Button>
       </header>
 
-      <DashboardStats summary={summary} />
+      {summary.isPending ? (
+        <DashboardStatsSkeleton />
+      ) : (
+        <DashboardStats summary={summary.data ?? null} />
+      )}
 
-      <JobsFilterBar
-        value={query}
-        onChange={setQuery}
-        resultCount={tierFilteredJobs.length}
-        formats={formats}
-        onToggleFormat={toggleFormat}
-        tiers={tiers}
-        onToggleTier={toggleTier}
-        sortKey={sortKey}
-        onChangeSortKey={setSortKey}
-        activeFacetCount={activeFacetCount}
-        onClearAll={clearAll}
-      />
+      {jobs.isPending && !jobs.data ? (
+        <JobsFilterBarSkeleton />
+      ) : (
+        <JobsFilterBar
+          value={query}
+          onChange={setQuery}
+          resultCount={tierFilteredJobs.length}
+          formats={formats}
+          onToggleFormat={toggleFormat}
+          tiers={tiers}
+          onToggleTier={toggleTier}
+          sortKey={sortKey}
+          onChangeSortKey={setSortKey}
+          activeFacetCount={activeFacetCount}
+          onClearAll={clearAll}
+        />
+      )}
 
-      {isActive ? (
+      {isActive && subtitleLabel !== null ? (
         <p aria-live="polite" className="text-sm text-muted">
           Mostrando {tierFilteredJobs.length} de {subtitleLabel} ofertas
         </p>
@@ -205,7 +207,8 @@ export function JobsDashboard({ firstPage, summary }: JobsDashboardProps) {
           errorMessage={friendlyErrorMessage(jobs.error?.message ?? "")}
           onRetry={handleRetry}
         />
-      ) : !hasAnyResults && (isActive || debouncedQuery.length > 0) ? (
+      ) : jobs.isPending && !jobs.data ? null : !hasAnyResults &&
+        (isActive || debouncedQuery.length > 0) ? (
         <FiltersEmptyState onClearFilters={clearAll} />
       ) : !hasAnyResults ? (
         <EmptyState onRetry={handleRetry} />
