@@ -22,6 +22,7 @@ import { ErrorState } from "./error-state";
 import { FiltersEmptyState } from "./filters-empty-state";
 import { HeaderSubtitleSkeleton } from "./header-subtitle-skeleton";
 import { JobCard } from "./job-card";
+import { JobCardGridSkeleton } from "./job-card-grid-skeleton";
 import { JobsFilterBar } from "./jobs-filter-bar";
 import { JobsFilterBarSkeleton } from "./jobs-filter-bar-skeleton";
 import { LoadMoreSentinel } from "./load-more-sentinel";
@@ -31,6 +32,7 @@ import { useDashboardSort } from "./use-dashboard-sort";
 import { useDebouncedValue } from "./use-debounced-value";
 
 const PAGE_LIMIT = 24;
+const LOADING_SKELETON_COUNT = 6;
 const SEARCH_DEBOUNCE_MS = 300;
 const STAGGER_STEP_MS = 80;
 const STAGGER_INDEX_CAP = 6;
@@ -210,8 +212,9 @@ export function JobsDashboard() {
           errorMessage={friendlyErrorMessage(jobs.error?.message ?? "")}
           onRetry={handleRetry}
         />
-      ) : jobs.isPending && !jobs.data ? null : !hasAnyResults &&
-        (isActive || debouncedQuery.length > 0) ? (
+      ) : jobs.isPending && !jobs.data ? (
+        <JobCardGridSkeleton count={LOADING_SKELETON_COUNT} />
+      ) : !hasAnyResults && (isActive || debouncedQuery.length > 0) ? (
         <FiltersEmptyState onClearFilters={clearAll} />
       ) : !hasAnyResults ? (
         <EmptyState onRetry={handleRetry} />

@@ -2,7 +2,7 @@
 
 import { Skeleton } from "@heroui/react/skeleton";
 
-const VALUE_HEIGHT = "h-7";
+const VALUE_HEIGHT = "h-6";
 const LABEL_HEIGHT = "h-4";
 
 function StatCellSkeleton() {
