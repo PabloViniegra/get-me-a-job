@@ -2,16 +2,20 @@
 "use no memo";
 
 import { Button } from "@heroui/react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
 import { useCallback, useMemo } from "react";
 import { sileo } from "sileo";
-import { applyFilters } from "@/lib/dashboard-filters";
-import { applySort } from "@/lib/dashboard-sort";
+import type { Format } from "@/lib/dashboard-filters";
+import type { SortKey } from "@/lib/dashboard-sort";
 import { friendlyErrorMessage } from "@/lib/error-message";
+import { JOB_FORMATS, type JobsListParsed } from "@/lib/jobs.list.schema";
 import { relativeJobTime } from "@/lib/relative-time";
 import { useTRPC } from "@/trpc/client";
-import { resolveDashboardView } from "./dashboard-state";
 import { DashboardStats } from "./dashboard-stats";
 import { DashboardStatsSkeleton } from "./dashboard-stats-skeleton";
 import { EmptyState } from "./empty-state";
@@ -19,20 +23,40 @@ import { ErrorState } from "./error-state";
 import { FiltersEmptyState } from "./filters-empty-state";
 import { HeaderSubtitleSkeleton } from "./header-subtitle-skeleton";
 import { JobCard } from "./job-card";
-import { JobCardGridSkeleton } from "./job-card-grid-skeleton";
 import { JobsFilterBar } from "./jobs-filter-bar";
 import { JobsFilterBarSkeleton } from "./jobs-filter-bar-skeleton";
+import { LoadMoreSentinel } from "./load-more-sentinel";
 import { useDashboardFilters } from "./use-dashboard-filters";
 import { useDashboardSort } from "./use-dashboard-sort";
+import { useDebouncedValue } from "./use-debounced-value";
 
-const SKELETON_COUNT = 6;
+const PAGE_LIMIT = 24;
+const SEARCH_DEBOUNCE_MS = 300;
 const STAGGER_STEP_MS = 80;
 const STAGGER_INDEX_CAP = 6;
+
+type JobsListInput = Omit<JobsListParsed, "cursor"> & { cursor?: string };
+
+function buildListInput(
+  query: string,
+  formats: ReadonlyArray<Format>,
+  sortKey: SortKey,
+): JobsListInput {
+  const trimmedQuery = query.trim();
+  return {
+    limit: PAGE_LIMIT,
+    query: trimmedQuery.length > 0 ? trimmedQuery : undefined,
+    formats:
+      formats.length > 0 && formats.length < JOB_FORMATS.length
+        ? [...formats]
+        : undefined,
+    sortKey,
+  };
+}
 
 export function JobsDashboard() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const jobs = useQuery(trpc.jobs.list.queryOptions());
   const {
     query,
     setQuery,
@@ -46,48 +70,72 @@ export function JobsDashboard() {
   } = useDashboardFilters();
   const { sortKey, setSortKey } = useDashboardSort();
 
+  const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
+
+  const listInput = useMemo(
+    () => buildListInput(debouncedQuery, formats, sortKey),
+    [debouncedQuery, formats, sortKey],
+  );
+
+  const jobs = useInfiniteQuery(
+    trpc.jobs.list.infiniteQueryOptions(listInput, {
+      getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    }),
+  );
+  const summary = useQuery(trpc.jobs.summary.queryOptions());
+
   const handleRetry = useCallback(() => {
-    void queryClient.invalidateQueries(trpc.jobs.list.queryFilter());
-  }, [queryClient, trpc]);
+    void jobs.refetch();
+  }, [jobs]);
 
   const handleRefresh = useCallback(() => {
     void sileo.promise(
-      queryClient.refetchQueries(trpc.jobs.list.queryFilter()),
+      queryClient.refetchQueries({
+        queryKey: trpc.jobs.list.queryKey(listInput),
+      }),
       {
         loading: { title: "Actualizando ofertas…" },
         success: { title: "Ofertas actualizadas" },
         error: { title: "No se pudo actualizar" },
       },
     );
-  }, [queryClient, trpc]);
+  }, [queryClient, trpc, listInput]);
 
-  const view = resolveDashboardView({
-    isPending: jobs.isPending,
-    isError: jobs.isError,
-    dataLength: jobs.data?.length ?? 0,
-  });
+  const flatJobs = useMemo(
+    () => jobs.data?.pages.flatMap((page) => page.items) ?? [],
+    [jobs.data],
+  );
 
-  const isLoading = view === "loading";
-
-  const filteredJobs = useMemo(
+  const tierFilteredJobs = useMemo(
     () =>
-      jobs.data
-        ? applySort(applyFilters(jobs.data, { query, formats, tiers }), sortKey)
-        : [],
-    [jobs.data, query, formats, tiers, sortKey],
+      tiers.length === 0
+        ? flatJobs
+        : flatJobs.filter((job) => tiers.includes(job.scoreTier)),
+    [flatJobs, tiers],
   );
 
   const newestCreatedAt = useMemo(
     () =>
-      jobs.data?.reduce<Date | null>(
+      flatJobs.reduce<Date | null>(
         (acc, job) =>
           acc === null || job.createdAt.getTime() > acc.getTime()
             ? job.createdAt
             : acc,
         null,
       ),
-    [jobs.data],
+    [flatJobs],
   );
+
+  const isInitialLoading = jobs.isPending && !jobs.data;
+  const hasAnyResults = flatJobs.length > 0;
+  const tierFilterHasNoMatches = hasAnyResults && tierFilteredJobs.length === 0;
+  const totalOfferts = summary.data?.total;
+  const subtitleLabel =
+    totalOfferts !== undefined
+      ? totalOfferts
+      : flatJobs.length > 0
+        ? flatJobs.length
+        : null;
 
   return (
     <section className="flex w-full max-w-7xl flex-col gap-4 p-4">
@@ -100,12 +148,12 @@ export function JobsDashboard() {
             </span>{" "}
             a job
           </h1>
-          {isLoading ? (
+          {isInitialLoading ? (
             <HeaderSubtitleSkeleton />
-          ) : jobs.data ? (
+          ) : subtitleLabel !== null ? (
             <p className="font-mono text-xs uppercase tracking-wider text-muted">
-              dashboard · {jobs.data.length}{" "}
-              {jobs.data.length === 1 ? "oferta" : "ofertas"}
+              dashboard · {subtitleLabel}{" "}
+              {subtitleLabel === 1 ? "oferta" : "ofertas"}
               {newestCreatedAt
                 ? ` · más reciente ${relativeJobTime(newestCreatedAt)}`
                 : ""}
@@ -116,25 +164,26 @@ export function JobsDashboard() {
           aria-label="Actualizar ofertas"
           variant="secondary"
           onPress={handleRefresh}
+          isDisabled={jobs.isFetching}
         >
           <RefreshCw size={16} aria-hidden="true" />
           Actualizar
         </Button>
       </header>
 
-      {isLoading ? (
+      {summary.isPending ? (
         <DashboardStatsSkeleton />
-      ) : jobs.data ? (
-        <DashboardStats jobs={jobs.data} />
-      ) : null}
+      ) : (
+        <DashboardStats summary={summary.data ?? null} />
+      )}
 
-      {isLoading ? (
+      {isInitialLoading ? (
         <JobsFilterBarSkeleton />
-      ) : view === "cards" && jobs.data ? (
+      ) : (
         <JobsFilterBar
           value={query}
           onChange={setQuery}
-          resultCount={filteredJobs.length}
+          resultCount={tierFilteredJobs.length}
           formats={formats}
           onToggleFormat={toggleFormat}
           tiers={tiers}
@@ -144,43 +193,68 @@ export function JobsDashboard() {
           activeFacetCount={activeFacetCount}
           onClearAll={clearAll}
         />
-      ) : null}
+      )}
 
-      {isActive && jobs.data ? (
+      {isActive && subtitleLabel !== null ? (
         <p aria-live="polite" className="text-sm text-muted">
-          Mostrando {filteredJobs.length} de {jobs.data.length} ofertas
+          Mostrando {tierFilteredJobs.length} de {subtitleLabel} ofertas
         </p>
       ) : null}
 
-      {isLoading ? (
-        <JobCardGridSkeleton count={SKELETON_COUNT} />
-      ) : view === "error" ? (
+      {jobs.isError ? (
         <ErrorState
           errorMessage={friendlyErrorMessage(jobs.error?.message ?? "")}
           onRetry={handleRetry}
         />
-      ) : view === "empty" ? (
-        <EmptyState onRetry={handleRetry} />
-      ) : view === "cards" && filteredJobs.length > 0 ? (
-        <ul
-          aria-busy={jobs.isFetching}
-          className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
-        >
-          {filteredJobs.map((job, index) => (
-            <li
-              key={job.id}
-              className="motion-safe:animate-job-enter"
-              style={{
-                animationDelay: `${Math.min(index, STAGGER_INDEX_CAP) * STAGGER_STEP_MS}ms`,
-              }}
-            >
-              <JobCard data={job} />
-            </li>
-          ))}
-        </ul>
-      ) : view === "cards" && jobs.data && filteredJobs.length === 0 ? (
+      ) : isInitialLoading ? null : !hasAnyResults &&
+        (isActive || debouncedQuery.length > 0) ? (
         <FiltersEmptyState onClearFilters={clearAll} />
-      ) : null}
+      ) : !hasAnyResults ? (
+        <EmptyState onRetry={handleRetry} />
+      ) : (
+        <div className="flex flex-col gap-4">
+          <ul
+            aria-busy={jobs.isFetchingNextPage}
+            className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
+          >
+            {tierFilteredJobs.map((job, index) => (
+              <li
+                key={job.id}
+                className="motion-safe:animate-job-enter"
+                style={{
+                  animationDelay: `${
+                    Math.min(index, STAGGER_INDEX_CAP) * STAGGER_STEP_MS
+                  }ms`,
+                }}
+              >
+                <JobCard data={job} />
+              </li>
+            ))}
+          </ul>
+          {tierFilterHasNoMatches ? (
+            <FiltersEmptyState onClearFilters={clearAll} />
+          ) : (
+            <LoadMoreSentinel
+              onIntersect={() => {
+                if (jobs.hasNextPage && !jobs.isFetchingNextPage) {
+                  void jobs.fetchNextPage();
+                }
+              }}
+              enabled={jobs.hasNextPage === true && !jobs.isFetchingNextPage}
+            />
+          )}
+          {!jobs.hasNextPage && tierFilteredJobs.length > 0 ? (
+            <p className="text-center text-sm text-muted">
+              Has llegado al final de la lista.
+            </p>
+          ) : null}
+          {jobs.isFetchingNextPage ? (
+            <p className="text-center text-sm text-muted">
+              Cargando más ofertas…
+            </p>
+          ) : null}
+        </div>
+      )}
     </section>
   );
 }

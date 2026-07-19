@@ -4,6 +4,7 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     jobOffer: {
       findMany: vi.fn(),
+      count: vi.fn(),
     },
   },
 }));
@@ -40,45 +41,139 @@ describe("appRouter.jobs.list", () => {
     vi.clearAllMocks();
   });
 
-  it("calls findMany with the documented orderBy (score desc, updatedAt desc)", async () => {
+  it("returns paginated items with nextCursor and applies default order/limit", async () => {
     vi.mocked(prisma.jobOffer.findMany).mockResolvedValue([]);
 
     const caller = createCaller(createTRPCContext());
-    await caller.jobs.list();
+    const result = await caller.jobs.list();
 
+    expect(result).toMatchObject({ items: [], nextCursor: null });
     expect(prisma.jobOffer.findMany).toHaveBeenCalledWith({
-      orderBy: [{ aiAnalysis: { score: "desc" } }, { updatedAt: "desc" }],
+      where: undefined,
+      orderBy: [{ aiAnalysis: { score: "desc" } }, { id: "desc" }],
+      cursor: undefined,
+      skip: undefined,
+      take: 25,
     });
   });
 
-  it("maps a happy-path row through the mapper and returns JobCardData", async () => {
+  it("forwards cursor + skip when resuming after the first page", async () => {
+    vi.mocked(prisma.jobOffer.findMany).mockResolvedValue([]);
+
+    const caller = createCaller(createTRPCContext());
+    await caller.jobs.list({ cursor: "abc123", limit: 12 });
+
+    expect(prisma.jobOffer.findMany).toHaveBeenCalledWith({
+      where: undefined,
+      orderBy: [{ aiAnalysis: { score: "desc" } }, { id: "desc" }],
+      cursor: { id: "abc123" },
+      skip: 1,
+      take: 13,
+    });
+  });
+
+  it("includes the title filter when query is present and trims whitespace", async () => {
+    vi.mocked(prisma.jobOffer.findMany).mockResolvedValue([]);
+
+    const caller = createCaller(createTRPCContext());
+    await caller.jobs.list({ query: "  typescript  " });
+
+    expect(prisma.jobOffer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          title: { contains: "typescript", mode: "insensitive" },
+        },
+      }),
+    );
+  });
+
+  it("includes the format filter only when a non-trivial subset is selected", async () => {
+    vi.mocked(prisma.jobOffer.findMany).mockResolvedValue([]);
+
+    const caller = createCaller(createTRPCContext());
+    await caller.jobs.list({ formats: ["Remote", "Hybrid"] });
+
+    expect(prisma.jobOffer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { format: { in: ["Remote", "Hybrid"] } },
+      }),
+    );
+  });
+
+  it("drops the format filter when every format is selected", async () => {
+    vi.mocked(prisma.jobOffer.findMany).mockResolvedValue([]);
+
+    const caller = createCaller(createTRPCContext());
+    await caller.jobs.list({ formats: ["Remote", "Hybrid", "On-site"] });
+
+    expect(prisma.jobOffer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: undefined }),
+    );
+  });
+
+  it("switches to createdAt order when requested", async () => {
+    vi.mocked(prisma.jobOffer.findMany).mockResolvedValue([]);
+
+    const caller = createCaller(createTRPCContext());
+    await caller.jobs.list({ sortKey: "createdAt" });
+
+    expect(prisma.jobOffer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      }),
+    );
+  });
+
+  it("rejects limits outside the 1..48 range", async () => {
+    vi.mocked(prisma.jobOffer.findMany).mockResolvedValue([]);
+
+    const caller = createCaller(createTRPCContext());
+    await expect(caller.jobs.list({ limit: 0 })).rejects.toThrow();
+    await expect(caller.jobs.list({ limit: 100 })).rejects.toThrow();
+    expect(prisma.jobOffer.findMany).not.toHaveBeenCalled();
+  });
+
+  it("maps a happy-path row through the mapper and exposes nextCursor when extras exist", async () => {
     vi.mocked(prisma.jobOffer.findMany).mockResolvedValue([
-      makeRow() as unknown as Awaited<
+      makeRow({ id: "row-1" }) as unknown as Awaited<
+        ReturnType<typeof prisma.jobOffer.findMany>
+      >[number],
+      makeRow({
+        id: "row-2",
+        jobId: "row-2",
+      }) as unknown as Awaited<
         ReturnType<typeof prisma.jobOffer.findMany>
       >[number],
     ]);
 
     const caller = createCaller(createTRPCContext());
-    const result = await caller.jobs.list();
+    const result = await caller.jobs.list({ limit: 1 });
 
-    expect(result).toMatchObject([
-      {
-        id: "mongo-id-1",
-        jobId: "3692563200",
-        title: "Senior TypeScript Engineer",
-        descriptionPreview: "Build cool things with TypeScript.",
-        whyItFitsPreview: "Strong match.",
-        requirements: ["TypeScript", "React"],
-        requirementsOverflowCount: 0,
-        hasAiAnalysis: true,
-        score: 87,
-        scoreTier: "excellent",
-      },
-    ]);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({
+      id: "row-1",
+      jobId: "3692563200",
+      title: "Senior TypeScript Engineer",
+      descriptionPreview: "Build cool things with TypeScript.",
+      whyItFitsPreview: "Strong match.",
+      requirements: ["TypeScript", "React"],
+      requirementsOverflowCount: 0,
+      hasAiAnalysis: true,
+      score: 87,
+      scoreTier: "excellent",
+    });
+    expect(result.nextCursor).toBe("row-1");
   });
 
-  it("sorts stale analyses after current scored jobs", async () => {
+  it("passes rows through the mapper in the order Prisma returned them", async () => {
     vi.mocked(prisma.jobOffer.findMany).mockResolvedValue([
+      makeRow({
+        id: "current",
+        jobId: "current",
+        aiAnalysis: { score: 50, whyItFits: "Current" },
+      }) as unknown as Awaited<
+        ReturnType<typeof prisma.jobOffer.findMany>
+      >[number],
       makeRow({
         id: "stale",
         jobId: "stale",
@@ -87,29 +182,27 @@ describe("appRouter.jobs.list", () => {
       }) as unknown as Awaited<
         ReturnType<typeof prisma.jobOffer.findMany>
       >[number],
-      makeRow({
-        id: "current",
-        jobId: "current",
-        aiAnalysis: { score: 50, whyItFits: "Current" },
-      }) as unknown as Awaited<
-        ReturnType<typeof prisma.jobOffer.findMany>
-      >[number],
     ]);
 
     const caller = createCaller(createTRPCContext());
     const result = await caller.jobs.list();
 
-    expect(result.map((job) => job.jobId)).toEqual(["current", "stale"]);
-    expect(result[1]?.scoreTier).toBe("pending");
+    expect(result.items.map((job) => job.id)).toEqual(["current", "stale"]);
+    expect(result.items[1]?.scoreTier).toBe("pending");
   });
 
-  it("returns an empty array when findMany yields no rows", async () => {
-    vi.mocked(prisma.jobOffer.findMany).mockResolvedValue([]);
+  it("returns nextCursor=null when the last page is smaller than the limit", async () => {
+    vi.mocked(prisma.jobOffer.findMany).mockResolvedValue([
+      makeRow({ id: "only" }) as unknown as Awaited<
+        ReturnType<typeof prisma.jobOffer.findMany>
+      >[number],
+    ]);
 
     const caller = createCaller(createTRPCContext());
-    const result = await caller.jobs.list();
+    const result = await caller.jobs.list({ limit: 24 });
 
-    expect(result).toEqual([]);
+    expect(result.items.map((j) => j.id)).toEqual(["only"]);
+    expect(result.nextCursor).toBeNull();
   });
 
   it("maps a row with aiAnalysis=null to hasAiAnalysis=false and pending tier", async () => {
@@ -122,12 +215,60 @@ describe("appRouter.jobs.list", () => {
     const caller = createCaller(createTRPCContext());
     const result = await caller.jobs.list();
 
-    expect(result).toHaveLength(1);
-    expect(result[0]).toMatchObject({
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({
       hasAiAnalysis: false,
       score: null,
       scoreTier: "pending",
       whyItFitsPreview: null,
     });
+  });
+});
+
+describe("appRouter.jobs.summary", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("counts total, current excellent, and current pending offers", async () => {
+    vi.mocked(prisma.jobOffer.count).mockResolvedValue(0);
+    vi.mocked(prisma.jobOffer.findMany).mockResolvedValue([
+      {
+        descriptionHash: "h-current",
+        gradedDescriptionHash: "h-current",
+        aiAnalysis: { score: 92 },
+      },
+      {
+        descriptionHash: "h-current",
+        gradedDescriptionHash: "h-current",
+        aiAnalysis: { score: 70 },
+      },
+      {
+        descriptionHash: "h-current",
+        gradedDescriptionHash: "h-previous",
+        aiAnalysis: { score: 95 },
+      },
+      {
+        descriptionHash: null,
+        gradedDescriptionHash: null,
+        aiAnalysis: null,
+      },
+    ] as unknown as Awaited<ReturnType<typeof prisma.jobOffer.findMany>>);
+
+    const caller = createCaller(createTRPCContext());
+    const summary = await caller.jobs.summary();
+
+    expect(summary).toEqual({ total: 4, excellent: 1, pending: 2 });
+  });
+
+  it("returns zeros when there are no offers at all", async () => {
+    vi.mocked(prisma.jobOffer.findMany).mockResolvedValue(
+      [] as unknown as Awaited<ReturnType<typeof prisma.jobOffer.findMany>>,
+    );
+
+    const caller = createCaller(createTRPCContext());
+    const summary = await caller.jobs.summary();
+
+    expect(summary).toEqual({ total: 0, excellent: 0, pending: 0 });
   });
 });

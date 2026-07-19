@@ -200,11 +200,11 @@ describe("E2E pipeline — webhook → upsert → grade → dashboard", () => {
     const caller = createCaller(createTRPCContext());
     const list = await caller.jobs.list();
 
-    expect(list).toHaveLength(2);
-    expect(list[0]?.score).toBe(92);
-    expect(list[1]?.score).toBe(71);
-    expect(list[0]?.scoreTier).toBe("excellent");
-    expect(list[1]?.scoreTier).toBe("worth");
+    expect(list.items).toHaveLength(2);
+    expect(list.items[0]?.score).toBe(92);
+    expect(list.items[1]?.score).toBe(71);
+    expect(list.items[0]?.scoreTier).toBe("excellent");
+    expect(list.items[1]?.scoreTier).toBe("worth");
   });
 
   it("rejects the webhook with 401 when the bearer token is wrong", async () => {

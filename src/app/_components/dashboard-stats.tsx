@@ -1,9 +1,10 @@
 "use no memo";
 
-import { type ScoreTier, TIER_LABELS } from "@/lib/score-tier";
+import type { JobsSummary } from "@/lib/jobs.list.schema";
+import { TIER_LABELS } from "@/lib/score-tier";
 
 type DashboardStatsProps = {
-  jobs: ReadonlyArray<{ scoreTier: ScoreTier }>;
+  summary: JobsSummary | null;
 };
 
 type StatCellProps = { value: string; label: string };
@@ -27,26 +28,30 @@ function Tick() {
   );
 }
 
-export function DashboardStats({ jobs }: DashboardStatsProps) {
-  const totalCount = jobs.length;
-  const excellentCount = jobs.filter(
-    (job) => job.scoreTier === "excellent",
-  ).length;
-  const pendingCount = jobs.filter((job) => job.scoreTier === "pending").length;
+export function DashboardStats({ summary }: DashboardStatsProps) {
+  const totalCount = summary?.total;
+  const excellentCount = summary?.excellent;
+  const pendingCount = summary?.pending;
 
   return (
     <section
       aria-label="Resumen del panel"
       className="flex flex-row items-stretch rounded-md border border-border bg-surface px-2 py-3"
     >
-      <StatCell value={String(totalCount)} label="Ofertas" />
+      <StatCell
+        value={totalCount === undefined ? "—" : String(totalCount)}
+        label="Ofertas"
+      />
       <Tick />
       <StatCell
-        value={String(excellentCount)}
+        value={excellentCount === undefined ? "—" : String(excellentCount)}
         label={`${TIER_LABELS.excellent}s`}
       />
       <Tick />
-      <StatCell value={String(pendingCount)} label={TIER_LABELS.pending} />
+      <StatCell
+        value={pendingCount === undefined ? "—" : String(pendingCount)}
+        label={TIER_LABELS.pending}
+      />
     </section>
   );
 }
