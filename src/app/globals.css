@@ -61,18 +61,23 @@
   );
   --toggle-x: 50%;
   --toggle-y: 50%;
+  /* HeroUI sets view-transition-name: none on :root to keep main page
+     interactive during view transitions. Re-enable it so the theme toggle
+     can animate the root's class change. */
+  view-transition-name: root;
 }
 
 ::view-transition-group(root) {
+  animation-duration: 1s;
   animation-timing-function: var(--expo-out);
 }
 
 ::view-transition-new(root) {
-  mask:
-    url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><defs><filter id="b"><feGaussianBlur stdDeviation="2"/></filter></defs><circle cx="20" cy="20" r="18" fill="white" filter="url(%23b)"/></svg>')
-    var(--toggle-x) var(--toggle-y) / 0 no-repeat;
-  animation: theme-toggle-scale 1s;
-  animation-fill-mode: both;
+  mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><defs><filter id="b"><feGaussianBlur stdDeviation="2"/></filter></defs><circle cx="20" cy="20" r="18" fill="white" filter="url(%23b)"/></svg>');
+  mask-position: center;
+  mask-size: 0;
+  mask-repeat: no-repeat;
+  animation: theme-toggle-scale 1s var(--expo-out) both;
 }
 
 ::view-transition-old(root),
@@ -82,11 +87,13 @@
   z-index: -1;
 }
 .dark::view-transition-new(root) {
-  animation: theme-toggle-scale 1s;
-  animation-fill-mode: both;
+  animation: theme-toggle-scale 1s var(--expo-out) both;
 }
 
 @keyframes theme-toggle-scale {
+  from {
+    mask-size: 0;
+  }
   to {
     mask-size: 200vmax;
   }

@@ -34,13 +34,40 @@ export function ThemeToggle() {
     }
 
     if (typeof document === "undefined" || !document.startViewTransition) {
+      console.warn("[theme-toggle] No VT API, falling back");
       setTheme(nextTheme);
       return;
     }
 
-    document.startViewTransition(() => {
+    try {
+      const transition = document.startViewTransition(() => {
+        const root = document.documentElement;
+        if (nextTheme === "dark") {
+          root.classList.add("dark");
+          root.setAttribute("data-theme", "dark");
+          root.style.colorScheme = "dark";
+        } else {
+          root.classList.remove("dark");
+          root.setAttribute("data-theme", "light");
+          root.style.colorScheme = "light";
+        }
+      });
+
+      console.log("[theme-toggle] VT started, transition:", transition);
+
+      transition.ready
+        .then(() => console.log("[theme-toggle] VT ready"))
+        .catch((e) => console.error("[theme-toggle] VT ready error", e));
+
+      transition.finished
+        .then(() => console.log("[theme-toggle] VT finished"))
+        .catch((e) => console.error("[theme-toggle] VT finished error", e));
+    } catch (e) {
+      console.error("[theme-toggle] startViewTransition threw", e);
       setTheme(nextTheme);
-    });
+    }
+
+    setTheme(nextTheme);
   };
 
   return (
