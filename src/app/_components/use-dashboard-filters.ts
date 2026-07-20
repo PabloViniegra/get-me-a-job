@@ -22,7 +22,7 @@ export function useDashboardFilters(): DashboardFilters {
   const [query, setQuery] = useState("");
   const [formats, setFormats] = useState<ReadonlyArray<Format>>([]);
   const [tiers, setTiers] = useState<ReadonlyArray<ScoreTier>>([]);
-  const [withAnalysis, setWithAnalysis] = useState(false);
+  const [withAnalysis, setWithAnalysis] = useState(true);
 
   const toggleFormat = useCallback((format: Format) => {
     setFormats((current) =>
@@ -44,11 +44,11 @@ export function useDashboardFilters(): DashboardFilters {
     setQuery("");
     setFormats([]);
     setTiers([]);
-    setWithAnalysis(false);
+    setWithAnalysis(true);
   }, []);
 
   const isActive =
-    query !== "" || tiers.length > 0 || formats.length > 0 || withAnalysis;
+    query !== "" || tiers.length > 0 || formats.length > 0 || !withAnalysis;
 
   return {
     query,
@@ -60,7 +60,7 @@ export function useDashboardFilters(): DashboardFilters {
     withAnalysis,
     setWithAnalysis,
     clearAll,
-    activeFacetCount: formats.length + tiers.length + (withAnalysis ? 1 : 0),
+    activeFacetCount: formats.length + tiers.length + (withAnalysis ? 0 : 1),
     isActive,
   };
 }

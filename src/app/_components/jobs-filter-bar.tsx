@@ -134,6 +134,9 @@ function AnalysisToggle({ selected, onChange }: AnalysisToggleProps) {
         <Switch.Control>
           <Switch.Thumb />
         </Switch.Control>
+        <span data-slot="label" className="text-sm">
+          Solo con análisis
+        </span>
       </Switch.Content>
     </Switch>
   );
