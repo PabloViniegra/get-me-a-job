@@ -17,7 +17,7 @@ Ubiquitous language for the SmartJobPulse pipeline. Terms here are the canonical
 - **ingestion** — the act of persisting jobs from Apify into MongoDB via `POST /api/webhooks/apify`. The seam where Apify meets the system.
 - **grader** — the module that computes an `aiAnalysis` from a job + CV via an `OpenRouterClient`. Owns the prompt, the zod schema, and the null-on-failure policy.
 - **`gradeJob`** — the pure function exported by the grader. Signature: `gradeJob({client, cvText, job}): Promise<GraderResult>`.
-- **`OpenRouterClient`** — the seam interface for any LLM call to OpenRouter chat completions. The only function: `complete(prompt, opts?): Promise<string>`. The factory reads `OPENROUTER_MODEL` (default `meta-llama/llama-3.3-70b-instruct:free`) and `ROUTER_API_KEY`.
+- **`OpenRouterClient`** — the seam interface for any LLM call to OpenRouter chat completions. Two methods: `complete(prompt, opts?): Promise<string>` (non-streaming, used by the grader with `response_format: json_object`) and `stream(prompt, opts?): AsyncIterable<string>` (SSE, used by the cover-letter generator). The factory reads `OPENROUTER_MODEL` (default `google/gemma-4-26b-a4b-it:free`) and `ROUTER_API_KEY`.
 
 ### Conventions
 

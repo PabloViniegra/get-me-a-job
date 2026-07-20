@@ -15,7 +15,7 @@ describe("parseEnv", () => {
 
     expect(result).toEqual({
       ...REQUIRED_BASE,
-      OPENROUTER_MODEL: "meta-llama/llama-3.3-70b-instruct:free",
+      OPENROUTER_MODEL: "google/gemma-4-26b-a4b-it:free",
       APIFY_ACTOR_ID: undefined,
       APIFY_SEARCH_INPUT: undefined,
       CV_TEXT: undefined,
@@ -25,9 +25,7 @@ describe("parseEnv", () => {
   it("defaults OPENROUTER_MODEL when unset", () => {
     const result = parseEnv(REQUIRED_BASE);
 
-    expect(result.OPENROUTER_MODEL).toBe(
-      "meta-llama/llama-3.3-70b-instruct:free",
-    );
+    expect(result.OPENROUTER_MODEL).toBe("google/gemma-4-26b-a4b-it:free");
   });
 
   it("uses the provided OPENROUTER_MODEL when set", () => {
