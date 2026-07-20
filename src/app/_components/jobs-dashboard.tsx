@@ -44,6 +44,7 @@ function buildListInput(
   formats: ReadonlyArray<Format>,
   tiers: ReadonlyArray<string>,
   sortKey: SortKey,
+  withAnalysis: boolean,
 ): JobsListInput {
   const trimmedQuery = query.trim();
   return {
@@ -55,6 +56,7 @@ function buildListInput(
         : undefined,
     tiers: tiers.length > 0 ? (tiers as JobsListInput["tiers"]) : undefined,
     sortKey,
+    withAnalysis: withAnalysis ? true : undefined,
   };
 }
 
@@ -72,6 +74,8 @@ export function JobsDashboard({ actions }: { actions?: ReactNode }) {
     toggleFormat,
     tiers,
     toggleTier,
+    withAnalysis,
+    setWithAnalysis,
     clearAll,
     activeFacetCount,
     isActive,
@@ -81,8 +85,8 @@ export function JobsDashboard({ actions }: { actions?: ReactNode }) {
   const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
 
   const listInput = useMemo(
-    () => buildListInput(debouncedQuery, formats, tiers, sortKey),
-    [debouncedQuery, formats, tiers, sortKey],
+    () => buildListInput(debouncedQuery, formats, tiers, sortKey, withAnalysis),
+    [debouncedQuery, formats, tiers, sortKey, withAnalysis],
   );
 
   const jobs = useInfiniteQuery({
@@ -195,6 +199,8 @@ export function JobsDashboard({ actions }: { actions?: ReactNode }) {
           onToggleFormat={toggleFormat}
           tiers={tiers}
           onToggleTier={toggleTier}
+          withAnalysis={withAnalysis}
+          onChangeWithAnalysis={setWithAnalysis}
           sortKey={sortKey}
           onChangeSortKey={setSortKey}
           activeFacetCount={activeFacetCount}

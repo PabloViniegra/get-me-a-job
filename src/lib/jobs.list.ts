@@ -80,6 +80,11 @@ function buildWhere(
   }
   const tierWhere = buildTierWhere(parsed.tiers ?? []);
   if (tierWhere) clauses.push(tierWhere);
+  if (parsed.withAnalysis === true) {
+    clauses.push({ aiAnalysis: { is: { score: { gte: 0 } } } });
+    clauses.push({ descriptionHash: { not: null } });
+    clauses.push({ gradedDescriptionHash: { not: null } });
+  }
   if (clauses.length === 0) return undefined;
   return clauses.length === 1
     ? (clauses[0] as Prisma.JobOfferWhereInput)

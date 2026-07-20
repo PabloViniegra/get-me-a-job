@@ -27,6 +27,7 @@ export const jobsListInputSchema = z.object({
   formats: z.array(z.enum(JOB_FORMATS)).max(JOB_FORMATS.length).optional(),
   sortKey: z.enum(JOB_SORT_KEYS).default("score"),
   tiers: z.array(z.enum(TIER_VALUES)).max(TIER_VALUES.length).optional(),
+  withAnalysis: z.boolean().optional(),
 });
 
 export type JobsListInput = z.input<typeof jobsListInputSchema>;

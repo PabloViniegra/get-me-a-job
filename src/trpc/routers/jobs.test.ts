@@ -191,6 +191,61 @@ describe("appRouter.jobs.list", () => {
     );
   });
 
+  it("adds aiAnalysis + gradedDescriptionHash + descriptionHash clauses when withAnalysis is true", async () => {
+    vi.mocked(prisma.jobOffer.findMany).mockResolvedValue([]);
+
+    const caller = createCaller(createTRPCContext());
+    await caller.jobs.list({ withAnalysis: true });
+
+    expect(prisma.jobOffer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          AND: [
+            { aiAnalysis: { is: { score: { gte: 0 } } } },
+            { descriptionHash: { not: null } },
+            { gradedDescriptionHash: { not: null } },
+          ],
+        },
+      }),
+    );
+  });
+
+  it("ignores withAnalysis: false (no extra clause)", async () => {
+    vi.mocked(prisma.jobOffer.findMany).mockResolvedValue([]);
+
+    const caller = createCaller(createTRPCContext());
+    await caller.jobs.list({ withAnalysis: false });
+
+    expect(prisma.jobOffer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: undefined }),
+    );
+  });
+
+  it("ANDs withAnalysis with other filters when combined", async () => {
+    vi.mocked(prisma.jobOffer.findMany).mockResolvedValue([]);
+
+    const caller = createCaller(createTRPCContext());
+    await caller.jobs.list({
+      formats: ["Remote"],
+      tiers: ["excellent"],
+      withAnalysis: true,
+    });
+
+    expect(prisma.jobOffer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          AND: [
+            { format: { in: ["Remote"] } },
+            { aiAnalysis: { is: { score: { gte: 85 } } } },
+            { aiAnalysis: { is: { score: { gte: 0 } } } },
+            { descriptionHash: { not: null } },
+            { gradedDescriptionHash: { not: null } },
+          ],
+        },
+      }),
+    );
+  });
+
   it("switches to createdAt order when requested", async () => {
     vi.mocked(prisma.jobOffer.findMany).mockResolvedValue([]);
 

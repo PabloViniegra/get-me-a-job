@@ -4,6 +4,7 @@ import { Button } from "@heroui/react/button";
 import { Input } from "@heroui/react/input";
 import { Label } from "@heroui/react/label";
 import { Separator } from "@heroui/react/separator";
+import { Switch } from "@heroui/react/switch";
 import { TextField } from "@heroui/react/textfield";
 import { ToggleButton } from "@heroui/react/toggle-button";
 import { ToggleButtonGroup } from "@heroui/react/toggle-button-group";
@@ -21,6 +22,8 @@ type JobsFilterBarProps = {
   onToggleFormat: (format: Format) => void;
   tiers: ReadonlyArray<ScoreTier>;
   onToggleTier: (tier: ScoreTier) => void;
+  withAnalysis: boolean;
+  onChangeWithAnalysis: (value: boolean) => void;
   sortKey: SortKey;
   onChangeSortKey: (key: SortKey) => void;
   activeFacetCount: number;
@@ -114,6 +117,28 @@ function SortGroup({ selected, onChange }: SortGroupProps) {
   );
 }
 
+type AnalysisToggleProps = {
+  selected: boolean;
+  onChange: (value: boolean) => void;
+};
+
+function AnalysisToggle({ selected, onChange }: AnalysisToggleProps) {
+  return (
+    <Switch
+      isSelected={selected}
+      onChange={onChange}
+      size="sm"
+      aria-label="Mostrar solo ofertas con análisis de IA"
+    >
+      <Switch.Content>
+        <Switch.Control>
+          <Switch.Thumb />
+        </Switch.Control>
+      </Switch.Content>
+    </Switch>
+  );
+}
+
 export function JobsFilterBar({
   value,
   onChange,
@@ -122,6 +147,8 @@ export function JobsFilterBar({
   onToggleFormat,
   tiers,
   onToggleTier,
+  withAnalysis,
+  onChangeWithAnalysis,
   sortKey,
   onChangeSortKey,
   activeFacetCount,
@@ -206,6 +233,18 @@ export function JobsFilterBar({
                 Modalidad
               </legend>
               <FormatGroup selected={formats} onToggle={onToggleFormat} />
+            </fieldset>
+
+            <Separator variant="secondary" className="my-3" />
+
+            <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
+              <legend className="text-[13px] font-medium tracking-[0.01em] text-muted">
+                Análisis de IA
+              </legend>
+              <AnalysisToggle
+                selected={withAnalysis}
+                onChange={onChangeWithAnalysis}
+              />
             </fieldset>
 
             <Separator variant="secondary" className="my-3" />

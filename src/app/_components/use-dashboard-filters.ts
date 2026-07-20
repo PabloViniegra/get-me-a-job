@@ -11,6 +11,8 @@ export type DashboardFilters = {
   toggleFormat: (format: Format) => void;
   tiers: ReadonlyArray<ScoreTier>;
   toggleTier: (tier: ScoreTier) => void;
+  withAnalysis: boolean;
+  setWithAnalysis: (value: boolean) => void;
   clearAll: () => void;
   activeFacetCount: number;
   isActive: boolean;
@@ -20,6 +22,7 @@ export function useDashboardFilters(): DashboardFilters {
   const [query, setQuery] = useState("");
   const [formats, setFormats] = useState<ReadonlyArray<Format>>([]);
   const [tiers, setTiers] = useState<ReadonlyArray<ScoreTier>>([]);
+  const [withAnalysis, setWithAnalysis] = useState(false);
 
   const toggleFormat = useCallback((format: Format) => {
     setFormats((current) =>
@@ -41,9 +44,11 @@ export function useDashboardFilters(): DashboardFilters {
     setQuery("");
     setFormats([]);
     setTiers([]);
+    setWithAnalysis(false);
   }, []);
 
-  const isActive = query !== "" || tiers.length > 0 || formats.length > 0;
+  const isActive =
+    query !== "" || tiers.length > 0 || formats.length > 0 || withAnalysis;
 
   return {
     query,
@@ -52,8 +57,10 @@ export function useDashboardFilters(): DashboardFilters {
     toggleFormat,
     tiers,
     toggleTier,
+    withAnalysis,
+    setWithAnalysis,
     clearAll,
-    activeFacetCount: formats.length + tiers.length,
+    activeFacetCount: formats.length + tiers.length + (withAnalysis ? 1 : 0),
     isActive,
   };
 }
