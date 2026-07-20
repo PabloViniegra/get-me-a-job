@@ -65,7 +65,7 @@ export function JobDetailModal({
   return (
     <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} variant="blur">
       <Modal.Container size="lg" scroll="inside" className="p-3 sm:p-6">
-        <Modal.Dialog className="overflow-hidden rounded-2xl border border-border-secondary">
+        <Modal.Dialog className="overflow-hidden rounded-2xl border border-border-secondary sm:max-w-2xl">
           <Modal.CloseTrigger />
 
           <Modal.Header className="flex-col items-stretch gap-5 border-b border-separator px-5 py-5 pr-14 sm:px-6 sm:py-6">
