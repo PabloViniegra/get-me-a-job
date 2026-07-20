@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { env } from "@/env";
 import {
   computeRateLimit,
   generateCoverLetterStream,
@@ -100,6 +101,10 @@ export async function POST(
         }
         controller.close();
       } catch (err) {
+        console.error(
+          `[cover-letter] stream error jobId=${job.jobId} model=${env.OPENROUTER_MODEL ?? "(default)"}`,
+          err,
+        );
         controller.error(err);
       }
     },
