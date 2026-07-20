@@ -107,6 +107,25 @@
   }
 }
 
+/* Modal animation tuning — HeroUI's defaults (250ms enter / 100ms exit) are
+   lopsided for this app's calm register. Re-time to design-system motion:
+   220ms enter / 180ms exit, expo-out easing (deceleration on both ends).
+   prefers-reduced-motion is already handled by HeroUI via motion-reduce:animate-none. */
+.modal__backdrop[data-entering="true"],
+.modal__backdrop[data-exiting="true"] {
+  --un-animate-duration: 180ms;
+}
+
+.modal__container[data-entering="true"] {
+  --un-animate-duration: 220ms;
+  animation-timing-function: var(--expo-out);
+}
+
+.modal__container[data-exiting="true"] {
+  --un-animate-duration: 180ms;
+  animation-timing-function: var(--expo-out);
+}
+
 body {
   background:
     repeating-linear-gradient(
