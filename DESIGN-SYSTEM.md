@@ -86,7 +86,7 @@ introduces zero new colors):
 
 | Score | Token pairing | Motion |
 |---|---|---|
-| ≥ 85 (excellent) | `--accent` / `--accent-soft` / `--accent-soft-foreground` | Pulse + spinning icon (FR-3.4, required) |
+| ≥ 85 (excellent) | `--accent` / `--accent-soft` / `--accent-soft-foreground` | Inset ring opacity breathe + slow spin (FR-3.4, required) |
 | 65–84 (worth reviewing) | `--default` / `--default-foreground` | None |
 | < 65 (low match) | `--muted` on `--surface`, no fill | None |
 
@@ -182,7 +182,7 @@ Shadows are HeroUI tokens, already tuned per mode — don't hand-write shadow va
 |---|---|---|
 | Hover/press micro-interactions | 120–160ms | ease-out |
 | Panel/drawer/modal transitions | 200–240ms | ease-out (deceleration) |
-| Match Score Chip pulse + icon spin (≥ 85, FR-3.4) | ~2s loop | linear (spin), ease-in-out (pulse) |
+| Match Score Chip breathe + icon spin (≥ 85, FR-3.4) | 2.4s / 3s loops | ease-in-out (breathe), linear (spin) |
 
 No spring/bounce anywhere. Keep the FR-3.4 loop slow enough to read as ambient status, not as an
 alert.
@@ -221,15 +221,16 @@ The one place motion and saturated color are allowed to coexist — reserve both
 component, per Design Philosophy #5.
 
 - **≥ 85:** `Chip` on `--accent-soft`/`--accent-soft-foreground`, containing the score in Data/mono
-  style + a small spinning icon, plus a pulsing ring/shadow on the chip itself (FR-3.4 — both the
-  pulse *and* the icon spin are required, not either/or).
+  style + a small slowly-spinning diagnostic icon (3s loop), plus a 1px inset accent ring whose
+  opacity breathes (25% ↔ 65%, 2.4s ease-in-out) — reads as a quiet status indicator, not a
+  notification bubble (FR-3.4 — both the breathe *and* the icon spin are required, not either/or).
 - **65–84:** `Chip` on `--default`/`--default-foreground`, mono score, static.
 - **< 65:** plain mono text in `--muted`, no chip fill — de-emphasized, still visible.
 
 ```tsx
 // Illustrative anatomy — not a full implementation
-<Chip className={tier === "excellent" ? "animate-pulse bg-accent-soft text-accent-soft-foreground" : "bg-default text-default-foreground"}>
-  {tier === "excellent" && <SpinningIcon className="size-3.5 text-accent animate-spin [animation-duration:2s]" />}
+<Chip className={tier === "excellent" ? "bg-accent-soft text-accent-soft-foreground motion-safe:animate-accent-breathe" : "bg-default text-default-foreground"}>
+  {tier === "excellent" && <LoaderCircle className="size-3 text-accent motion-safe:animate-spin [animation-duration:3s]" />}
   <span className="font-mono tabular-nums">{score}</span>
 </Chip>
 ```

@@ -1,7 +1,7 @@
 "use no memo";
 
 import { Chip } from "@heroui/react/chip";
-import { Sparkles } from "lucide-react";
+import { LoaderCircle } from "lucide-react";
 import type { JSX } from "react";
 import { type ScoreTier, scoreTier, TIER_LABELS } from "@/lib/score-tier";
 
@@ -16,8 +16,8 @@ export function chipClassForTier(tier: ScoreTier): ChipClasses {
     case "excellent":
       return {
         container:
-          "bg-accent-soft text-accent-soft-foreground motion-safe:animate-glow-pulse",
-        icon: "motion-safe:animate-spin [animation-duration:2s] text-accent",
+          "bg-accent-soft text-accent-soft-foreground motion-safe:animate-accent-breathe",
+        icon: "motion-safe:animate-spin [animation-duration:3s] text-accent",
         text: "font-mono tabular-nums",
       };
     case "worth":
@@ -75,7 +75,7 @@ export function MatchScoreChip({
 
   const leading =
     tier === "excellent" ? (
-      <Sparkles className={classes.icon} aria-hidden="true" size={14} />
+      <LoaderCircle className={classes.icon} aria-hidden="true" size={12} />
     ) : prefix ? (
       prefix
     ) : null;
