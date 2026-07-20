@@ -143,7 +143,7 @@ export function JobsDashboard({ actions }: { actions?: ReactNode }) {
 
   return (
     <section className="flex w-full max-w-7xl flex-col gap-4 p-4">
-      <header className="flex items-center justify-between gap-4">
+      <header className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="text-[28px] font-semibold leading-[1.2] tracking-[-0.02em] text-foreground">
             Get{" "}
@@ -167,7 +167,7 @@ export function JobsDashboard({ actions }: { actions?: ReactNode }) {
             </p>
           ) : null}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {actions}
           <Button
             aria-label="Actualizar ofertas"

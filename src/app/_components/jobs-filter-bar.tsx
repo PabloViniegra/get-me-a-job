@@ -252,11 +252,13 @@ export function JobsFilterBar({
 
             <Separator variant="secondary" className="my-3" />
 
-            <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
+            <fieldset className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0">
               <legend className="text-[13px] font-medium tracking-[0.01em] text-muted">
                 Nivel de coincidencia
               </legend>
-              <TierGroup selected={tiers} onToggle={onToggleTier} />
+              <div className="overflow-x-auto">
+                <TierGroup selected={tiers} onToggle={onToggleTier} />
+              </div>
             </fieldset>
 
             <Separator variant="secondary" className="my-3" />
