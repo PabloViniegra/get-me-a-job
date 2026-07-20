@@ -23,7 +23,7 @@ import { ErrorState } from "./error-state";
 import { FiltersEmptyState } from "./filters-empty-state";
 import { HeaderSubtitleSkeleton } from "./header-subtitle-skeleton";
 import { JobCardGridSkeleton } from "./job-card-grid-skeleton";
-import { JobCardList } from "./job-card-list";
+import { JobDetailsContainer } from "./job-details-container";
 import { JobsFilterBar } from "./jobs-filter-bar";
 import { JobsFilterBarSkeleton } from "./jobs-filter-bar-skeleton";
 import { LoadMoreSentinel } from "./load-more-sentinel";
@@ -226,7 +226,7 @@ export function JobsDashboard({ actions }: { actions?: ReactNode }) {
         ) : (
           <div className="flex flex-col gap-4">
             <h2 className="sr-only">Ofertas</h2>
-            <JobCardList
+            <JobDetailsContainer
               jobs={flatJobs}
               isFetchingNextPage={jobs.isFetchingNextPage}
             />

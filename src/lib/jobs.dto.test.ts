@@ -40,9 +40,12 @@ describe("toJobCardData — tier rule", () => {
       salary: "EUR 60k-80k",
       linkedinUrl: "https://linkedin.com/jobs/view/flow-through",
       createdAt,
+      description: "Build cool things with TypeScript.",
       descriptionPreview: "Build cool things with TypeScript.",
+      whyItFits: "Strong match.",
       whyItFitsPreview: "Strong match.",
       requirements: ["TypeScript", "React"],
+      allRequirements: ["TypeScript", "React"],
       requirementsOverflowCount: 0,
       hasAiAnalysis: true,
       score: 87,
@@ -229,6 +232,7 @@ describe("toJobCardData — requirements list", () => {
     const result = toJobCardData(makeRow({ requirements }));
 
     expect(result.requirements).toEqual(requirements.slice(0, 5));
+    expect(result.allRequirements).toEqual(requirements);
     expect(result.requirementsOverflowCount).toBe(7);
   });
 });

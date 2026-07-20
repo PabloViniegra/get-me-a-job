@@ -10,9 +10,12 @@ export type JobCardData = {
   salary: string | null;
   linkedinUrl: string;
   createdAt: Date;
+  description: string;
   descriptionPreview: string;
+  whyItFits: string | null;
   whyItFitsPreview: string | null;
   requirements: string[];
+  allRequirements: string[];
   requirementsOverflowCount: number;
   hasAiAnalysis: boolean;
   score: number | null;
@@ -84,9 +87,12 @@ export function toJobCardData(row: JobOfferRow): JobCardData {
     salary: row.salary,
     linkedinUrl: row.linkedinUrl,
     createdAt: row.createdAt,
+    description: row.description,
     descriptionPreview: truncate(row.description, DESCRIPTION_PREVIEW_MAX),
+    whyItFits: aiAnalysis?.whyItFits ?? null,
     whyItFitsPreview,
     requirements,
+    allRequirements: row.requirements,
     requirementsOverflowCount,
     hasAiAnalysis,
     score,

@@ -22,9 +22,14 @@ const loadMotionFeatures = () =>
 type JobCardListProps = {
   jobs: ReadonlyArray<JobCardData>;
   isFetchingNextPage: boolean;
+  onSelectJob: (job: JobCardData) => void;
 };
 
-export function JobCardList({ jobs, isFetchingNextPage }: JobCardListProps) {
+export function JobCardList({
+  jobs,
+  isFetchingNextPage,
+  onSelectJob,
+}: JobCardListProps) {
   return (
     <MotionConfig reducedMotion="user">
       <LazyMotion features={loadMotionFeatures}>
@@ -61,7 +66,7 @@ export function JobCardList({ jobs, isFetchingNextPage }: JobCardListProps) {
                   layout: { duration: 0.32, ease: EASE_OUT_QUINT },
                 }}
               >
-                <JobCard data={job} />
+                <JobCard data={job} onViewDetails={onSelectJob} />
               </m.li>
             ))}
           </AnimatePresence>
