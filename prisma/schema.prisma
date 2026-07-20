@@ -21,6 +21,10 @@ model JobOffer {
   gradingLeaseUntil DateTime?
   requirements   String[]
   aiAnalysis     AiAnalysis?
+  coverLetter           String?
+  coverLetterDescriptionHash String?
+  coverLetterRegenerations Int       @default(0)
+  coverLetterLastRegeneratedAt DateTime?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 }

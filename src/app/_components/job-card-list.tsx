@@ -19,10 +19,15 @@ const loadMotionFeatures = () =>
     ({ default: features }) => features,
   );
 
+type JobViewTarget = {
+  data: JobCardData;
+  section: "details" | "cover-letter";
+};
+
 type JobCardListProps = {
   jobs: ReadonlyArray<JobCardData>;
   isFetchingNextPage: boolean;
-  onSelectJob: (job: JobCardData) => void;
+  onSelectJob: (target: JobViewTarget) => void;
 };
 
 export function JobCardList({

@@ -6,6 +6,11 @@ import type { JobCardData } from "@/lib/jobs.dto";
 import { JobCardList } from "./job-card-list";
 import { JobDetailModal } from "./job-detail-modal";
 
+type JobViewTarget = {
+  data: JobCardData;
+  section: "details" | "cover-letter";
+};
+
 type JobDetailsContainerProps = {
   jobs: ReadonlyArray<JobCardData>;
   isFetchingNextPage: boolean;
@@ -17,9 +22,13 @@ export function JobDetailsContainer({
 }: JobDetailsContainerProps) {
   const [selectedJob, setSelectedJob] = useState<JobCardData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [initialSection, setInitialSection] = useState<
+    "details" | "cover-letter"
+  >("details");
 
-  const handleSelectJob = (job: JobCardData) => {
-    setSelectedJob(job);
+  const handleSelectJob = (target: JobViewTarget) => {
+    setSelectedJob(target.data);
+    setInitialSection(target.section);
     setIsModalOpen(true);
   };
 
@@ -34,6 +43,7 @@ export function JobDetailsContainer({
         data={selectedJob}
         isOpen={isModalOpen}
         onOpenChange={setIsModalOpen}
+        initialSection={initialSection}
       />
     </>
   );

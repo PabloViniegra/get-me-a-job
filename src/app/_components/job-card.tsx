@@ -4,14 +4,19 @@
 import { Button } from "@heroui/react/button";
 import { Card } from "@heroui/react/card";
 import { Link } from "@heroui/react/link";
-import { ArrowUpRight, ChevronRight, Clock } from "lucide-react";
+import { ArrowUpRight, ChevronRight, Clock, Sparkles } from "lucide-react";
 import type { JobCardData } from "@/lib/jobs.dto";
 import { MatchScoreChip } from "./match-score-chip";
 import { RelativeTime } from "./relative-time";
 
+type JobViewTarget = {
+  data: JobCardData;
+  section: "details" | "cover-letter";
+};
+
 type JobCardProps = {
   data: JobCardData;
-  onViewDetails: (data: JobCardData) => void;
+  onViewDetails: (target: JobViewTarget) => void;
 };
 
 const HTTP_URL_PATTERN = /^https?:\/\//;
@@ -86,7 +91,16 @@ export function JobCard({ data, onViewDetails }: JobCardProps) {
             className="transition-transform duration-150 active:scale-[0.97]"
             size="sm"
             variant="ghost"
-            onPress={() => onViewDetails(data)}
+            onPress={() => onViewDetails({ data, section: "cover-letter" })}
+          >
+            <Sparkles aria-hidden="true" size={12} />
+            Carta IA
+          </Button>
+          <Button
+            className="transition-transform duration-150 active:scale-[0.97]"
+            size="sm"
+            variant="ghost"
+            onPress={() => onViewDetails({ data, section: "details" })}
           >
             Ver detalles
             <ChevronRight aria-hidden="true" size={14} />

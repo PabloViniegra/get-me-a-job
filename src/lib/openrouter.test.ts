@@ -7,6 +7,7 @@ import {
   type Mock,
   vi,
 } from "vitest";
+import type { StreamingOpenRouterClient } from "./openrouter";
 
 const mockFetch = vi.fn();
 
@@ -23,7 +24,7 @@ afterEach(() => {
 
 function mockEnv(overrides: Record<string, string | undefined> = {}) {
   vi.doMock("@/env", () => ({
-    DEFAULT_OPENROUTER_MODEL: "meta-llama/llama-3.3-70b-instruct:free",
+    DEFAULT_OPENROUTER_MODEL: "google/gemma-4-26b-a4b-it:free",
     env: {
       DATABASE_URL: "mongodb://localhost:27017/test",
       ROUTER_API_KEY: "test-router-key",
@@ -45,6 +46,25 @@ function okResponse(content: string): Response {
     status: 200,
     statusText: "OK",
     json: () => Promise.resolve({ choices: [{ message: { content } }] }),
+  } as Response;
+}
+
+function sseResponse(chunks: ReadonlyArray<string>): Response {
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (const chunk of chunks) {
+        controller.enqueue(encoder.encode(chunk));
+      }
+      controller.close();
+    },
+  });
+  return {
+    ok: true,
+    status: 200,
+    statusText: "OK",
+    body: stream,
+    json: () => Promise.reject(new Error("not used")),
   } as Response;
 }
 
@@ -72,7 +92,7 @@ describe("openRouterClient (ingestion)", () => {
       "https://openrouter.ai/api/v1/chat/completions",
       expect.objectContaining({
         body: expect.stringContaining(
-          '"model":"meta-llama/llama-3.3-70b-instruct:free"',
+          '"model":"google/gemma-4-26b-a4b-it:free"',
         ),
       }),
     );
@@ -157,5 +177,126 @@ describe("openRouterClient (ingestion)", () => {
     await expect(openRouterClient.complete("hi")).rejects.toThrow(
       "network down",
     );
+  });
+});
+
+async function loadStreamingClient(): Promise<StreamingOpenRouterClient> {
+  const mod = await loadOpenRouter();
+  return mod.openRouterClient as StreamingOpenRouterClient;
+}
+
+describe("openRouterClient.stream", () => {
+  it("yields text chunks from an SSE response and stops at [DONE]", async () => {
+    mockEnv();
+    (mockFetch as Mock).mockResolvedValueOnce(
+      sseResponse([
+        'data: {"choices":[{"delta":{"content":"Hola "}}]}\n\n',
+        'data: {"choices":[{"delta":{"content":"mundo"}}]}\n\n',
+        "data: [DONE]\n\n",
+      ]),
+    );
+
+    const client = await loadStreamingClient();
+    const collected: string[] = [];
+    for await (const chunk of client.stream("hola")) {
+      collected.push(chunk);
+    }
+    expect(collected.join("")).toBe("Hola mundo");
+  });
+
+  it("buffers partial SSE lines split across read() boundaries", async () => {
+    mockEnv();
+    const partial = [
+      'data: {"choices":[{"delta":{"content":"par',
+      'te uno"}}]}\n\ndata: [DONE]\n\n',
+    ].join("");
+    (mockFetch as Mock).mockResolvedValueOnce(sseResponse([partial]));
+
+    const client = await loadStreamingClient();
+    const collected: string[] = [];
+    for await (const chunk of client.stream("x")) {
+      collected.push(chunk);
+    }
+    expect(collected.join("")).toBe("parte uno");
+  });
+
+  it("builds the documented streaming request shape (URL, headers, body)", async () => {
+    mockEnv({ ROUTER_API_KEY: "router-secret-key" });
+    (mockFetch as Mock).mockResolvedValueOnce(
+      sseResponse(["data: [DONE]\n\n"]),
+    );
+
+    const client = await loadStreamingClient();
+    for await (const _ of client.stream("hello")) {
+      // drain
+    }
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+
+    expect(url).toBe("https://openrouter.ai/api/v1/chat/completions");
+    expect(init.method).toBe("POST");
+    expect(init.headers).toEqual({
+      Authorization: "Bearer router-secret-key",
+      "Content-Type": "application/json",
+      Accept: "text/event-stream",
+    });
+    expect(JSON.parse(init.body as string)).toEqual({
+      model: "test-model",
+      messages: [{ role: "user", content: "hello" }],
+      stream: true,
+    });
+  });
+
+  it("propagates opts.signal into the streaming fetch call", async () => {
+    mockEnv();
+    (mockFetch as Mock).mockResolvedValueOnce(
+      sseResponse(["data: [DONE]\n\n"]),
+    );
+
+    const client = await loadStreamingClient();
+    const controller = new AbortController();
+    for await (const _ of client.stream("hi", { signal: controller.signal })) {
+      // drain
+    }
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      "https://openrouter.ai/api/v1/chat/completions",
+      expect.objectContaining({ signal: controller.signal }),
+    );
+  });
+
+  it("throws when the streaming response is not OK", async () => {
+    mockEnv();
+    (mockFetch as Mock).mockResolvedValueOnce({
+      ok: false,
+      status: 429,
+      statusText: "Too Many Requests",
+      body: null,
+      json: () => Promise.resolve({}),
+    } as Response);
+
+    const client = await loadStreamingClient();
+
+    const iterator = client.stream("hi")[Symbol.asyncIterator]();
+    await expect(iterator.next()).rejects.toThrow(
+      "OpenRouter stream failed: 429",
+    );
+  });
+
+  it("throws when the streaming response has no body", async () => {
+    mockEnv();
+    (mockFetch as Mock).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      body: null,
+      json: () => Promise.resolve({}),
+    } as Response);
+
+    const client = await loadStreamingClient();
+
+    const iterator = client.stream("hi")[Symbol.asyncIterator]();
+    await expect(iterator.next()).rejects.toThrow("no body");
   });
 });

@@ -15,6 +15,10 @@ function makeRow(overrides: Partial<JobOfferRow> = {}): JobOfferRow {
     gradedDescriptionHash: "hash-current",
     gradingLeaseUntil: null,
     aiAnalysis: { score: 87, whyItFits: "Strong match." },
+    coverLetter: null,
+    coverLetterDescriptionHash: null,
+    coverLetterRegenerations: 0,
+    coverLetterLastRegeneratedAt: null,
     createdAt: new Date("2026-01-01T00:00:00Z"),
     updatedAt: new Date("2026-01-02T00:00:00Z"),
     ...overrides,
@@ -50,6 +54,9 @@ describe("toJobCardData — tier rule", () => {
       hasAiAnalysis: true,
       score: 87,
       scoreTier: "excellent",
+      coverLetter: null,
+      coverLetterRegenerations: 0,
+      coverLetterLastRegeneratedAt: null,
     });
   });
 
@@ -242,5 +249,37 @@ describe("toJobCardData — null safety", () => {
     const result = toJobCardData(makeRow({ salary: null }));
 
     expect(result.salary).toBeNull();
+  });
+});
+
+describe("toJobCardData — cover letter fields", () => {
+  it("maps an existing cover letter and metadata through unchanged", () => {
+    const lastAt = new Date("2026-06-01T10:00:00Z");
+    const result = toJobCardData(
+      makeRow({
+        coverLetter: "Estimado equipo...",
+        coverLetterDescriptionHash: "hash-current",
+        coverLetterRegenerations: 2,
+        coverLetterLastRegeneratedAt: lastAt,
+      }),
+    );
+
+    expect(result.coverLetter).toBe("Estimado equipo...");
+    expect(result.coverLetterRegenerations).toBe(2);
+    expect(result.coverLetterLastRegeneratedAt).toEqual(lastAt);
+  });
+
+  it("coerces undefined cover-letter fields to safe defaults", () => {
+    const result = toJobCardData(
+      makeRow({
+        coverLetter: undefined,
+        coverLetterRegenerations: undefined,
+        coverLetterLastRegeneratedAt: undefined,
+      }),
+    );
+
+    expect(result.coverLetter).toBeNull();
+    expect(result.coverLetterRegenerations).toBe(0);
+    expect(result.coverLetterLastRegeneratedAt).toBeNull();
   });
 });

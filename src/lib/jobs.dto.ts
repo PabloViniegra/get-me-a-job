@@ -20,6 +20,9 @@ export type JobCardData = {
   hasAiAnalysis: boolean;
   score: number | null;
   scoreTier: ScoreTier;
+  coverLetter: string | null;
+  coverLetterRegenerations: number;
+  coverLetterLastRegeneratedAt: Date | null;
 };
 
 export type JobOfferRow = {
@@ -35,6 +38,10 @@ export type JobOfferRow = {
   gradedDescriptionHash: string | null;
   gradingLeaseUntil: Date | null;
   aiAnalysis: { score: number; whyItFits: string } | null;
+  coverLetter: string | null;
+  coverLetterDescriptionHash: string | null;
+  coverLetterRegenerations: number;
+  coverLetterLastRegeneratedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -97,5 +104,8 @@ export function toJobCardData(row: JobOfferRow): JobCardData {
     hasAiAnalysis,
     score,
     scoreTier: tierFor(aiAnalysis),
+    coverLetter: row.coverLetter ?? null,
+    coverLetterRegenerations: row.coverLetterRegenerations ?? 0,
+    coverLetterLastRegeneratedAt: row.coverLetterLastRegeneratedAt ?? null,
   };
 }
