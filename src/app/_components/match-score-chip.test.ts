@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ScoreTier } from "@/lib/score-tier";
 import { chipClassForTier } from "./match-score-chip";
 
-describe("chipClassForTier (DESIGN-SYSTEM §Match Score Chip — visual contract)", () => {
+describe("chipClassForTier (DESIGN.md §Match Score Chip — visual contract)", () => {
   it("'excellent' uses bg-accent-soft surface + motion-safe accent ring breathe + a slow-spinning icon at 3s", () => {
     const cls = chipClassForTier("excellent");
     expect(cls.container).toContain("bg-accent-soft");

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { type ScoreTier, scoreTier, TIER_LABELS } from "./score-tier";
 
 describe("scoreTier", () => {
-  describe("boundaries (PRD FR-3.4 / DESIGN-SYSTEM §Match Score Chip)", () => {
+  describe("boundaries (PRD FR-3.4 / DESIGN.md §Match Score Chip)", () => {
     const matrix: ReadonlyArray<{
       name: string;
       score: number | null;

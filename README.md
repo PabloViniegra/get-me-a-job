@@ -62,7 +62,7 @@ Vitest. Env parsing and the tRPC router have unit tests; Prisma has a live-DB in
 
 ## Further reading
 
-- [`DESIGN-SYSTEM.md`](./DESIGN-SYSTEM.md) — color/type/spacing tokens, component specs, voice.
+- [`DESIGN.md`](./DESIGN.md) — color/type/spacing tokens, component specs, voice.
 - [`docs/agents/`](./docs/agents) — issue-tracker and domain-modeling conventions for agents
   working in this repo.
 

@@ -31,4 +31,4 @@ Ubiquitous language for the SmartJobPulse pipeline. Terms here are the canonical
 
 - Architecture decisions live in `docs/adr/`.
 - The user-facing product spec lives in `PRD.md` (source of truth for scope and epics).
-- The visual style lives in `DESIGN-SYSTEM.md` (source of truth for tokens, typography, component specs).
+- The visual style lives in `DESIGN.md` (source of truth for tokens, typography, component specs).
