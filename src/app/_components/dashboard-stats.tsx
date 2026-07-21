@@ -34,7 +34,7 @@ export function DashboardStats({ summary }: DashboardStatsProps) {
   return (
     <section
       aria-label="Resumen del panel"
-      className="flex flex-row items-stretch rounded-md border border-border bg-surface px-2 py-3"
+      className="flex flex-row items-stretch rounded-xl border border-border bg-surface px-2 py-3"
     >
       <StatCell
         value={totalCount === undefined ? "—" : String(totalCount)}

@@ -29,7 +29,7 @@ export function DashboardStatsSkeleton() {
     <section
       aria-label="Resumen del panel"
       aria-hidden="true"
-      className="flex flex-row items-stretch rounded-md border border-border bg-surface px-2 py-3"
+      className="flex flex-row items-stretch rounded-xl border border-border bg-surface px-2 py-3"
     >
       <StatCellSkeleton />
       <Tick />
