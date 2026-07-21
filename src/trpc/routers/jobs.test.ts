@@ -6,6 +6,7 @@ vi.mock("@/lib/prisma", () => ({
       findMany: vi.fn(),
       count: vi.fn(),
     },
+    $runCommandRaw: vi.fn(),
   },
 }));
 
@@ -369,41 +370,43 @@ describe("appRouter.jobs.summary", () => {
     vi.clearAllMocks();
   });
 
+  function mockAggregation(facets: {
+    total: number;
+    excellent: number;
+    pending: number;
+  }) {
+    vi.mocked(prisma.$runCommandRaw).mockResolvedValue({
+      cursor: {
+        firstBatch: [
+          {
+            total: facets.total > 0 ? [{ n: facets.total }] : [],
+            excellent: facets.excellent > 0 ? [{ n: facets.excellent }] : [],
+            pending: facets.pending > 0 ? [{ n: facets.pending }] : [],
+          },
+        ],
+      },
+      ok: 1,
+    });
+  }
+
   it("counts total, current excellent, and current pending offers", async () => {
-    vi.mocked(prisma.jobOffer.count).mockResolvedValue(0);
-    vi.mocked(prisma.jobOffer.findMany).mockResolvedValue([
-      {
-        descriptionHash: "h-current",
-        gradedDescriptionHash: "h-current",
-        aiAnalysis: { score: 92 },
-      },
-      {
-        descriptionHash: "h-current",
-        gradedDescriptionHash: "h-current",
-        aiAnalysis: { score: 70 },
-      },
-      {
-        descriptionHash: "h-current",
-        gradedDescriptionHash: "h-previous",
-        aiAnalysis: { score: 95 },
-      },
-      {
-        descriptionHash: null,
-        gradedDescriptionHash: null,
-        aiAnalysis: null,
-      },
-    ] as unknown as Awaited<ReturnType<typeof prisma.jobOffer.findMany>>);
+    mockAggregation({ total: 4, excellent: 1, pending: 2 });
 
     const caller = createCaller(createTRPCContext());
     const summary = await caller.jobs.summary();
 
     expect(summary).toEqual({ total: 4, excellent: 1, pending: 2 });
+    expect(prisma.$runCommandRaw).toHaveBeenCalledWith(
+      expect.objectContaining({
+        aggregate: "JobOffer",
+        pipeline: expect.any(Array),
+        cursor: {},
+      }),
+    );
   });
 
   it("returns zeros when there are no offers at all", async () => {
-    vi.mocked(prisma.jobOffer.findMany).mockResolvedValue(
-      [] as unknown as Awaited<ReturnType<typeof prisma.jobOffer.findMany>>,
-    );
+    mockAggregation({ total: 0, excellent: 0, pending: 0 });
 
     const caller = createCaller(createTRPCContext());
     const summary = await caller.jobs.summary();

@@ -93,4 +93,67 @@ suite("prisma client (integration)", () => {
       await prisma.jobOffer.deleteMany({ where: { jobId: TEST_JOB_ID } });
     }
   });
+
+  it("summarizeJobs — aggregation $facet pipeline runs against live MongoDB", async () => {
+    try {
+      const seed = `integration-summary-${Date.now()}`;
+      const rows = [
+        {
+          jobId: `${seed}-excellent`,
+          title: "Excellent match",
+          format: "Remote",
+          salary: null,
+          linkedinUrl: "https://linkedin.com/jobs/view/x",
+          description: "x",
+          requirements: [],
+          aiAnalysis: { whyItFits: "yes", score: 92 },
+          descriptionHash: "h-current",
+          gradedDescriptionHash: "h-current",
+        },
+        {
+          jobId: `${seed}-pending-hash`,
+          title: "Pending — graded older hash",
+          format: "Remote",
+          salary: null,
+          linkedinUrl: "https://linkedin.com/jobs/view/y",
+          description: "y",
+          requirements: [],
+          aiAnalysis: { whyItFits: "stale", score: 70 },
+          descriptionHash: "h-current",
+          gradedDescriptionHash: "h-old",
+        },
+        {
+          jobId: `${seed}-pending-no-ai`,
+          title: "Pending — no analysis",
+          format: "Remote",
+          salary: null,
+          linkedinUrl: "https://linkedin.com/jobs/view/z",
+          description: "z",
+          requirements: [],
+          descriptionHash: null,
+          gradedDescriptionHash: null,
+        },
+      ];
+
+      for (const row of rows) {
+        await prisma.jobOffer.upsert({
+          where: { jobId: row.jobId },
+          create: row,
+          update: row,
+        });
+      }
+
+      const { summarizeJobs } = await import("./jobs.list");
+      const summary = await summarizeJobs();
+
+      expect(summary.total).toBeGreaterThanOrEqual(3);
+      expect(summary.excellent).toBeGreaterThanOrEqual(1);
+      expect(summary.pending).toBeGreaterThanOrEqual(2);
+    } finally {
+      const _seedPrefix = `integration-summary-${Math.floor(Date.now() / 1000)}`;
+      await prisma.jobOffer.deleteMany({
+        where: { jobId: { startsWith: "integration-summary-" } },
+      });
+    }
+  });
 });

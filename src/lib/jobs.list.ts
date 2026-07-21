@@ -119,29 +119,75 @@ export async function listJobs(
   return { items, nextCursor };
 }
 
+type PrismaLike = {
+  $runCommandRaw: (command: Record<string, unknown>) => Promise<unknown>;
+};
+
+async function aggregateSummary(prisma: PrismaClient): Promise<JobsSummary> {
+  const result = await (prisma as unknown as PrismaLike).$runCommandRaw({
+    aggregate: "JobOffer",
+    pipeline: [
+      {
+        $facet: {
+          total: [{ $count: "n" }],
+          excellent: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $ne: ["$descriptionHash", null] },
+                    { $eq: ["$descriptionHash", "$gradedDescriptionHash"] },
+                    { $ne: ["$aiAnalysis", null] },
+                    { $gte: ["$aiAnalysis.score", 85] },
+                  ],
+                },
+              },
+            },
+            { $count: "n" },
+          ],
+          pending: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    { $eq: ["$descriptionHash", null] },
+                    { $ne: ["$descriptionHash", "$gradedDescriptionHash"] },
+                    { $eq: ["$aiAnalysis", null] },
+                  ],
+                },
+              },
+            },
+            { $count: "n" },
+          ],
+        },
+      },
+    ],
+    cursor: {},
+  });
+
+  const cursor = (
+    result as {
+      cursor?: { firstBatch?: Array<Record<string, Array<{ n: number }>>> };
+    }
+  ).cursor;
+  const facets = cursor?.firstBatch?.[0] ?? {
+    total: [],
+    excellent: [],
+    pending: [],
+  };
+
+  const pick = (bucket: Array<{ n: number }> | undefined): number =>
+    bucket?.[0]?.n ?? 0;
+
+  return {
+    total: pick(facets.total),
+    excellent: pick(facets.excellent),
+    pending: pick(facets.pending),
+  };
+}
+
 export async function summarizeJobs(
   prisma: PrismaClient = defaultPrisma,
 ): Promise<JobsSummary> {
-  const rows = await prisma.jobOffer.findMany({
-    select: {
-      descriptionHash: true,
-      gradedDescriptionHash: true,
-      aiAnalysis: { select: { score: true } },
-    },
-  });
-
-  let excellent = 0;
-  let pending = 0;
-  for (const row of rows) {
-    const isCurrent =
-      row.descriptionHash !== null &&
-      row.descriptionHash === row.gradedDescriptionHash;
-    if (!isCurrent || row.aiAnalysis === null) {
-      pending += 1;
-      continue;
-    }
-    if (row.aiAnalysis.score >= 85) excellent += 1;
-  }
-
-  return { total: rows.length, excellent, pending };
+  return aggregateSummary(prisma);
 }
