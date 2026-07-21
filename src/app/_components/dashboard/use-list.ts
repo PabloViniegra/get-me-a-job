@@ -27,7 +27,7 @@ export function useDashboardList(listInput: DashboardListInput) {
     placeholderData: keepPreviousData,
   });
   const summary = useQuery(trpc.jobs.summary.queryOptions());
-  const listQueryKey: QueryKey = trpc.jobs.list.infiniteQueryKey(listInput);
+  const dashboardQueryKey: QueryKey = trpc.jobs.pathKey();
 
   const flatJobs = useMemo<ReadonlyArray<JobCardData>>(
     () => jobs.data?.pages.flatMap((page) => page.items) ?? [],
@@ -59,7 +59,7 @@ export function useDashboardList(listInput: DashboardListInput) {
   return {
     jobs,
     summary,
-    listQueryKey,
+    dashboardQueryKey,
     flatJobs,
     newestCreatedAt,
     handleRetry,

@@ -72,17 +72,17 @@ export function JobsDashboard({ actions }: { actions?: ReactNode }) {
   const {
     jobs,
     summary,
-    listQueryKey,
+    dashboardQueryKey,
     flatJobs,
     newestCreatedAt,
     handleRetry,
     handleLoadMore,
   } = useDashboardList(listInput);
 
-  const handleRefresh = useDashboardRefresh(listQueryKey, {
-    loading: "Actualizando ofertas…",
-    success: "Ofertas actualizadas",
-    error: "No se pudo actualizar",
+  const handleRefresh = useDashboardRefresh(dashboardQueryKey, {
+    loading: "Recargando datos…",
+    success: "Datos recargados",
+    error: "No se pudieron recargar los datos",
   });
 
   const totalOffers = summary.data?.total;
@@ -100,7 +100,7 @@ export function JobsDashboard({ actions }: { actions?: ReactNode }) {
         subtitleLabel={subtitleLabel}
         isSubtitleLoading={summary.isPending && !summary.data}
         newestCreatedAt={newestCreatedAt}
-        isRefreshing={jobs.isFetching}
+        isRefreshing={jobs.isFetching || summary.isFetching}
         onRefresh={handleRefresh}
       />
 

@@ -1,5 +1,5 @@
 import { Button } from "@heroui/react/button";
-import { RefreshCw } from "lucide-react";
+import { LoaderCircle, RefreshCw } from "lucide-react";
 import type { ReactNode } from "react";
 import { RelativeTime } from "../shared/relative-time";
 import { ThemeToggle } from "../shared/theme-toggle";
@@ -50,13 +50,22 @@ export function DashboardHeader({
       <div className="flex flex-wrap items-center gap-3">
         {actions}
         <Button
-          aria-label="Actualizar ofertas"
+          aria-label={isRefreshing ? "Recargando datos" : "Actualizar ofertas"}
           variant="secondary"
           onPress={onRefresh}
           isDisabled={isRefreshing}
+          className="transition-transform duration-150 active:scale-[0.97]"
         >
-          <RefreshCw size={16} aria-hidden="true" />
-          Actualizar
+          {isRefreshing ? (
+            <LoaderCircle
+              aria-hidden="true"
+              size={16}
+              className="motion-safe:animate-spin"
+            />
+          ) : (
+            <RefreshCw size={16} aria-hidden="true" />
+          )}
+          {isRefreshing ? "Recargando…" : "Actualizar"}
         </Button>
         <ThemeToggle />
       </div>

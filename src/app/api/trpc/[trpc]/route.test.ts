@@ -43,7 +43,7 @@ describe("trpc route handler — cache headers", () => {
     });
   });
 
-  it("returns public cache headers on a successful GET query", async () => {
+  it("prevents shared caching on a successful GET query", async () => {
     const { GET } = await import("./route");
     const req = makeRequest(
       "GET",
@@ -53,9 +53,7 @@ describe("trpc route handler — cache headers", () => {
     const res = await GET(req);
 
     expect(res.status).toBe(200);
-    expect(res.headers.get("cache-control")).toBe(
-      "public, s-maxage=60, stale-while-revalidate=300",
-    );
+    expect(res.headers.get("cache-control")).toBe("private, no-cache");
   });
 
   it("returns private no-cache headers on a POST request", async () => {
