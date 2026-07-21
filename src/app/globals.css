@@ -129,7 +129,35 @@
 }
 
 body {
-  background: var(--background);
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 20px,
+      color-mix(in oklab, var(--border) 40%, transparent) 20px,
+      color-mix(in oklab, var(--border) 40%, transparent) 21px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 30px,
+      color-mix(in oklab, var(--border) 35%, transparent) 30px,
+      color-mix(in oklab, var(--border) 35%, transparent) 31px
+    ),
+    repeating-linear-gradient(
+      60deg,
+      transparent,
+      transparent 40px,
+      color-mix(in oklab, var(--border) 30%, transparent) 40px,
+      color-mix(in oklab, var(--border) 30%, transparent) 41px
+    ),
+    repeating-linear-gradient(
+      150deg,
+      transparent,
+      transparent 35px,
+      color-mix(in oklab, var(--border) 25%, transparent) 35px,
+      color-mix(in oklab, var(--border) 25%, transparent) 36px
+    ), var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
 }
