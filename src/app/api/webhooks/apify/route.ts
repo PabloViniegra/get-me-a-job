@@ -1,11 +1,13 @@
 import { after, NextResponse } from "next/server";
-import { env } from "@/env";
-import { apifyClient } from "@/lib/apify";
-import type { ApifyLinkedInJobItem } from "@/lib/apify-mapper";
-import { mapApifyItemToJobOffer } from "@/lib/apify-mapper";
 import { isBearerAuthorized } from "@/lib/auth";
+import { env } from "@/lib/env";
 import { log } from "@/lib/log";
 import { prisma } from "@/lib/prisma";
+import { apifyClient } from "@/server/apify/client";
+import {
+  type ApifyLinkedInJobItem,
+  mapApifyItemToJobOffer,
+} from "@/server/apify/mapper";
 import { fireGradingTrigger } from "./trigger-grade";
 
 const MAX_WEBHOOK_BODY_BYTES = 64 * 1024;

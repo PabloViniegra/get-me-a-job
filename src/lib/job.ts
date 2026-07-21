@@ -1,3 +1,6 @@
+export const SALARY_MISSING_SHORT = "—";
+export const SALARY_MISSING_LONG = "No publicado";
+
 export type AiAnalysis = {
   score: number;
   whyItFits: string;

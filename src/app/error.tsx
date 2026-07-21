@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { friendlyErrorMessage } from "@/lib/error-message";
-import { ErrorState } from "./_components/error-state";
+import { ErrorState } from "./_components/shared/error-state";
 
 type ErrorProps = {
   error: Error & { digest?: string };

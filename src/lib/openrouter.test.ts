@@ -23,7 +23,7 @@ afterEach(() => {
 });
 
 function mockEnv(overrides: Record<string, string | undefined> = {}) {
-  vi.doMock("@/env", () => ({
+  vi.doMock("@/lib/env", () => ({
     DEFAULT_OPENROUTER_MODEL: "google/gemma-4-26b-a4b-it:free",
     env: {
       DATABASE_URL: "mongodb://localhost:27017/test",

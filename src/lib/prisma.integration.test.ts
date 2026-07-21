@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { prisma } from "@/lib/prisma";
 import {
   type ApifyLinkedInJobItem,
   mapApifyItemToJobOffer,
-} from "./apify-mapper";
-import { prisma } from "./prisma";
+} from "@/server/apify/mapper";
 
 const TEST_JOB_ID = "integration-test-job-offer";
 const TEST_DESCRIPTION = "Integration test job offer.";
@@ -143,7 +143,7 @@ suite("prisma client (integration)", () => {
         });
       }
 
-      const { summarizeJobs } = await import("./jobs.list");
+      const { summarizeJobs } = await import("@/server/jobs/list");
       const summary = await summarizeJobs();
 
       expect(summary.total).toBeGreaterThanOrEqual(3);

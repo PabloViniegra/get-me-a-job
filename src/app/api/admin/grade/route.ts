@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { env } from "@/env";
 import { isBearerAuthorized } from "@/lib/auth";
+import { env } from "@/lib/env";
 import {
   gradePendingJobs,
   MAX_GRADE_CONCURRENCY,
   MAX_GRADE_LIMIT,
-} from "@/lib/grade-pending";
+} from "@/server/jobs/grading-runner";
 
 const gradeRequestSchema = z
   .object({

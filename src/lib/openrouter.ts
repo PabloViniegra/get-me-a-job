@@ -1,5 +1,5 @@
-import { DEFAULT_OPENROUTER_MODEL, env } from "@/env";
 import { cachedClient } from "@/lib/cache";
+import { DEFAULT_OPENROUTER_MODEL, env } from "@/lib/env";
 
 export type OpenRouterStreamChunk = string;
 

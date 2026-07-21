@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/env", () => ({
+vi.mock("@/lib/env", () => ({
   env: {
     APIFY_WEBHOOK_SECRET: "test-webhook-secret",
     APIFY_ADMIN_SECRET: "test-admin-secret",
@@ -8,7 +8,7 @@ vi.mock("@/env", () => ({
   },
 }));
 
-vi.mock("@/lib/apify", () => ({
+vi.mock("@/server/apify/client", () => ({
   apifyClient: { dataset: vi.fn() },
 }));
 
@@ -43,9 +43,9 @@ vi.mock("next/server", async () => {
   };
 });
 
-import { apifyClient } from "@/lib/apify";
 import { gradeJob } from "@/lib/grader";
 import { prisma } from "@/lib/prisma";
+import { apifyClient } from "@/server/apify/client";
 import { POST } from "./route";
 import { fireGradingTrigger } from "./trigger-grade";
 

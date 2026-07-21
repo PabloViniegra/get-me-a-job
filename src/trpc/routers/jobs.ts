@@ -1,5 +1,5 @@
-import { listJobs, summarizeJobs } from "@/lib/jobs.list";
-import { jobsListInputSchema } from "@/lib/jobs.list.schema";
+import { listJobs, summarizeJobs } from "@/server/jobs/list";
+import { jobsListInputSchema } from "@/server/jobs/list-schema";
 import { publicProcedure, router } from "@/trpc/init";
 
 const DEFAULT_LIST_INPUT: {

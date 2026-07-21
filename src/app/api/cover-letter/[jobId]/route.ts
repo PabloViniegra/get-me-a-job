@@ -1,16 +1,16 @@
 import { z } from "zod";
-import { env } from "@/env";
-import {
-  computeRateLimit,
-  generateCoverLetterStream,
-} from "@/lib/cover-letter";
 import { loadCV } from "@/lib/cv";
+import { env } from "@/lib/env";
 import { log } from "@/lib/log";
 import {
   openRouterClient,
   type StreamingOpenRouterClient,
 } from "@/lib/openrouter";
 import { prisma } from "@/lib/prisma";
+import {
+  computeRateLimit,
+  generateCoverLetterStream,
+} from "@/server/cover-letter/generate";
 
 const jobIdSchema = z.string().min(1).max(128);
 

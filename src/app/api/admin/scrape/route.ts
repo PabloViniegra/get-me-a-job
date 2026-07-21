@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { env } from "@/env";
-import { triggerLinkedInScrape } from "@/lib/apify-trigger";
 import { isBearerAuthorized } from "@/lib/auth";
+import { env } from "@/lib/env";
+import { triggerLinkedInScrape } from "@/server/apify/trigger";
 
 export async function POST(request: Request) {
   if (!isBearerAuthorized(request, env.APIFY_ADMIN_SECRET)) {

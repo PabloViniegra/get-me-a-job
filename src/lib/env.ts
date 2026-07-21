@@ -36,3 +36,5 @@ export function parseEnv(raw: Record<string, string | undefined>): Env {
 
   return result.data;
 }
+
+export const env: Env = parseEnv(process.env);

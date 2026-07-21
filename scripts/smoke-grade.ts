@@ -10,11 +10,11 @@
 // happy path of the LLM completion.
 
 import { createHash } from "node:crypto";
-import { mapApifyItemToJobOffer } from "../src/lib/apify-mapper";
+import { gradeJob } from "@/lib/grader";
+import { openRouterClient } from "@/lib/openrouter";
+import { prisma } from "@/lib/prisma";
+import { mapApifyItemToJobOffer } from "@/server/apify/mapper";
 import { loadCV } from "../src/lib/cv";
-import { gradeJob } from "../src/lib/grader";
-import { openRouterClient } from "../src/lib/openrouter";
-import { prisma } from "../src/lib/prisma";
 
 const SMOKE_JOB_ID = `smoke-${Date.now()}`;
 

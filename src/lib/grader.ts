@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { DEFAULT_OPENROUTER_MODEL } from "@/lib/env";
 import type { AiAnalysis, JobSnapshot } from "@/lib/job";
+import { formatJob } from "@/lib/job-format";
 import { log } from "@/lib/log";
 import type { OpenRouterClient } from "@/lib/openrouter";
 
@@ -70,7 +71,7 @@ export async function gradeJob(
 
   const prompt = PROMPT_TEMPLATE.replace("{CV}", cvText).replace(
     "{JOB}",
-    formatJob(job),
+    formatJob(job, "en"),
   );
 
   const callResult = await callWithRetry({
@@ -157,24 +158,4 @@ function extractJsonObject(raw: string): string {
   const end = raw.lastIndexOf("}");
   if (start === -1 || end === -1 || end <= start) return raw;
   return raw.slice(start, end + 1);
-}
-
-function formatJob(job: JobSnapshot): string {
-  const salary = job.salary ?? "Not disclosed";
-  const requirements =
-    job.requirements.length > 0
-      ? job.requirements.map((r) => `- ${r}`).join("\n")
-      : "(none)";
-  return [
-    `Title: ${job.title}`,
-    `Format: ${job.format}`,
-    `Salary: ${salary}`,
-    `LinkedIn: ${job.linkedinUrl}`,
-    "",
-    "Description:",
-    job.description,
-    "",
-    "Requirements:",
-    requirements,
-  ].join("\n");
 }

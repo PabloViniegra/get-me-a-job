@@ -1,6 +1,6 @@
 import superjson from "superjson";
 import { describe, expect, it } from "vitest";
-import type { JobCardData } from "@/lib/jobs.dto";
+import type { JobCardData } from "@/server/jobs/dto";
 
 describe("superjson wire round-trip for JobCardData", () => {
   it("preserves the createdAt Date through serialize/parse (A6/40 smoke)", () => {

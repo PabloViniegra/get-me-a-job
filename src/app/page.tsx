@@ -1,7 +1,7 @@
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { getQueryClient, trpc } from "@/trpc/server";
-import { CvInfo } from "./_components/cv-info";
-import { JobsDashboard } from "./_components/jobs-dashboard";
+import { JobsDashboard } from "./_components/dashboard/jobs-dashboard";
+import { CvInfo } from "./_components/shared/cv-info";
 
 const INITIAL_LIST_INPUT = {
   limit: 24,

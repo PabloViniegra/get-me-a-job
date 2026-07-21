@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
-import { env } from "@/env";
 import { cachedClient } from "@/lib/cache";
+import { env } from "@/lib/env";
 
 export const prisma = cachedClient(
   "prisma",

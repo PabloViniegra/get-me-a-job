@@ -1,18 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/env", () => ({
+vi.mock("@/lib/env", () => ({
   env: {
     APIFY_ADMIN_SECRET: "test-admin-secret",
   },
 }));
 
-vi.mock("@/lib/grade-pending", () => ({
+vi.mock("@/server/jobs/grading-runner", () => ({
   gradePendingJobs: vi.fn(),
   MAX_GRADE_LIMIT: 30,
   MAX_GRADE_CONCURRENCY: 3,
 }));
 
-import { gradePendingJobs } from "@/lib/grade-pending";
+import { gradePendingJobs } from "@/server/jobs/grading-runner";
 import { POST } from "./route";
 
 function makeRequest(body: unknown, authHeader?: string) {

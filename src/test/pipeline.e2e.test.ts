@@ -89,7 +89,7 @@ const mocks = vi.hoisted(() => {
   return { store, jobOffer, openRouterComplete };
 });
 
-vi.mock("@/lib/apify", () => ({
+vi.mock("@/server/apify/client", () => ({
   apifyClient: {
     dataset: vi.fn().mockReturnValue({
       listItems: vi.fn().mockResolvedValue({ items: [] }),
@@ -123,8 +123,8 @@ vi.mock("next/server", async () => {
 const { appRouter } = await import("@/trpc/routers/_app");
 const { createCallerFactory, createTRPCContext } = await import("@/trpc/init");
 const { POST: webhookPOST } = await import("@/app/api/webhooks/apify/route");
-const { gradePendingJobs } = await import("@/lib/grade-pending");
-const { apifyClient } = await import("@/lib/apify");
+const { gradePendingJobs } = await import("@/server/jobs/grading-runner");
+const { apifyClient } = await import("@/server/apify/client");
 
 const VALID_DATASET_ITEMS = [
   {

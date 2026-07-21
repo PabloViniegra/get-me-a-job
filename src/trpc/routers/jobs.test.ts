@@ -10,8 +10,8 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
-import type { JobOfferRow } from "@/lib/jobs.dto";
 import { prisma } from "@/lib/prisma";
+import type { JobOfferRow } from "@/server/jobs/dto";
 import { createCallerFactory, createTRPCContext } from "@/trpc/init";
 import { appRouter } from "@/trpc/routers/_app";
 

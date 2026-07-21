@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/env", () => ({
+vi.mock("@/lib/env", () => ({
   env: {
     DATABASE_URL: "mongodb://localhost:27017/test",
     ROUTER_API_KEY: "test-router-key",

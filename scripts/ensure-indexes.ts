@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { env } from "@/env";
+import { env } from "@/lib/env";
 
 const prisma = new PrismaClient({ datasourceUrl: env.DATABASE_URL });
 
