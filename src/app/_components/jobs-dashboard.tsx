@@ -1,5 +1,4 @@
 "use client";
-"use no memo";
 
 import { Button } from "@heroui/react/button";
 import {
@@ -10,7 +9,7 @@ import {
 } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import type { Format } from "@/lib/dashboard-filters";
 import type { SortKey } from "@/lib/dashboard-sort";
 import { friendlyErrorMessage } from "@/lib/error-message";
@@ -64,9 +63,6 @@ export function JobsDashboard({ actions }: { actions?: ReactNode }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    void import("@/lib/relative-time");
-  }, []);
   const {
     query,
     setQuery,

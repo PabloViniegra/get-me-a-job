@@ -1,9 +1,8 @@
 "use client";
-"use no memo";
 
 import { Button } from "@heroui/react/button";
 import { LoaderCircle, Sparkles } from "lucide-react";
-import { AnimatePresence, LazyMotion, MotionConfig, m } from "motion/react";
+import { AnimatePresence, m } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CopyButton } from "./copy-button";
 
@@ -26,10 +25,6 @@ const EASE_OUT_QUINT = [0.22, 1, 0.36, 1] satisfies [
   number,
   number,
 ];
-const SECTION_FEATURES = () =>
-  import("./cover-letter-motion-features").then(
-    ({ default: features }) => features,
-  );
 const PARAGRAPH_SPLIT = /\n\n|\n/;
 
 function paragraphs(text: string): ReadonlyArray<string> {
@@ -60,36 +55,42 @@ export function CoverLetterSection({
   );
   const [regenerations, setRegenerations] = useState(initialRegenerations);
   const abortRef = useRef<AbortController | null>(null);
-  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const countdownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     return () => {
       abortRef.current?.abort();
-      if (countdownRef.current !== null) clearInterval(countdownRef.current);
+      if (countdownRef.current !== null) clearTimeout(countdownRef.current);
     };
   }, []);
 
   const startCountdown = useCallback((retryAfterMs: number) => {
-    if (countdownRef.current !== null) clearInterval(countdownRef.current);
-    let remaining = retryAfterMs;
+    if (countdownRef.current !== null) clearTimeout(countdownRef.current);
+    const deadline = Date.now() + retryAfterMs;
     setPhase((current) =>
       current.kind === "streaming"
-        ? { kind: "rate-limited", retryAfterMs: remaining, text: current.text }
+        ? {
+            kind: "rate-limited",
+            retryAfterMs: retryAfterMs,
+            text: current.text,
+          }
         : current,
     );
-    countdownRef.current = setInterval(() => {
-      remaining -= 1000;
+    const tick = (): void => {
+      const remaining = deadline - Date.now();
       if (remaining <= 0) {
-        if (countdownRef.current !== null) clearInterval(countdownRef.current);
+        countdownRef.current = null;
         setPhase((current) => ({ kind: "idle", text: current.text }));
-      } else {
-        setPhase((current) =>
-          current.kind === "rate-limited"
-            ? { ...current, retryAfterMs: remaining }
-            : current,
-        );
+        return;
       }
-    }, 1000);
+      setPhase((current) =>
+        current.kind === "rate-limited"
+          ? { ...current, retryAfterMs: remaining }
+          : current,
+      );
+      countdownRef.current = setTimeout(tick, 1000);
+    };
+    countdownRef.current = setTimeout(tick, 1000);
   }, []);
 
   const handleGenerate = useCallback(async () => {
@@ -240,40 +241,36 @@ export function CoverLetterSection({
       ) : null}
 
       {hasLetter ? (
-        <MotionConfig reducedMotion="user">
-          <LazyMotion features={SECTION_FEATURES}>
-            <m.div
-              key={isStreaming ? "streaming" : "complete"}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2, ease: EASE_OUT_QUINT }}
-              className="mt-4 rounded-xl bg-[var(--surface-secondary)] p-4 sm:p-5"
-            >
-              <div className="flex flex-col gap-3 text-sm leading-[1.6] text-foreground text-pretty">
-                <AnimatePresence initial={false}>
-                  {paragraphs(phase.text).map((paragraph) => (
-                    <m.p
-                      key={paragraph.slice(0, 32)}
-                      initial={isStreaming ? { opacity: 0.3 } : false}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.18 }}
-                    >
-                      {paragraph}
-                    </m.p>
-                  ))}
-                </AnimatePresence>
-                {isStreaming ? (
-                  <m.span
-                    aria-hidden="true"
-                    className="inline-block h-3 w-1 self-start rounded-sm bg-accent"
-                    animate={{ opacity: [0.3, 1, 0.3] }}
-                    transition={{ duration: 1.2, repeat: Infinity }}
-                  />
-                ) : null}
-              </div>
-            </m.div>
-          </LazyMotion>
-        </MotionConfig>
+        <m.div
+          key={isStreaming ? "streaming" : "complete"}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2, ease: EASE_OUT_QUINT }}
+          className="mt-4 rounded-xl bg-[var(--surface-secondary)] p-4 sm:p-5"
+        >
+          <div className="flex flex-col gap-3 text-sm leading-[1.6] text-foreground text-pretty">
+            <AnimatePresence initial={false}>
+              {paragraphs(phase.text).map((paragraph) => (
+                <m.p
+                  key={paragraph.slice(0, 32)}
+                  initial={isStreaming ? { opacity: 0.3 } : false}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.18 }}
+                >
+                  {paragraph}
+                </m.p>
+              ))}
+            </AnimatePresence>
+            {isStreaming ? (
+              <m.span
+                aria-hidden="true"
+                className="inline-block h-3 w-1 self-start rounded-sm bg-accent"
+                animate={{ opacity: [0.3, 1, 0.3] }}
+                transition={{ duration: 1.2, repeat: Infinity }}
+              />
+            ) : null}
+          </div>
+        </m.div>
       ) : (
         <p className="mt-3 text-sm text-muted">
           Pulsa el botón para que la IA redacte una carta adaptada a tu CV y a

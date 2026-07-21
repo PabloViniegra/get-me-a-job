@@ -1,5 +1,4 @@
 "use client";
-"use no memo";
 
 import { useState } from "react";
 import type { JobCardData } from "@/lib/jobs.dto";

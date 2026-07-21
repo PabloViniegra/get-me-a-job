@@ -1,5 +1,3 @@
-"use no memo";
-
 import { Skeleton } from "@heroui/react/skeleton";
 
 const VALUE_HEIGHT = "h-6";

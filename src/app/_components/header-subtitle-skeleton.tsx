@@ -1,5 +1,3 @@
-"use no memo";
-
 import { Skeleton } from "@heroui/react/skeleton";
 
 const SUBTITLE_HEIGHT = "h-[17px]";

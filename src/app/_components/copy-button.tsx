@@ -1,9 +1,8 @@
 "use client";
-"use no memo";
 
 import { Button } from "@heroui/react/button";
 import { Check, Copy } from "lucide-react";
-import { AnimatePresence, LazyMotion, MotionConfig, m } from "motion/react";
+import { AnimatePresence, m } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const COPIED_RESET_MS = 1500;
@@ -13,10 +12,6 @@ const EASE_OUT_QUINT = [0.22, 1, 0.36, 1] satisfies [
   number,
   number,
 ];
-const COPY_ICON_FEATURES = () =>
-  import("./copy-button-motion-features").then(
-    ({ default: features }) => features,
-  );
 
 type CopyButtonProps = {
   text: string;
@@ -60,37 +55,33 @@ export function CopyButton({
       onPress={handlePress}
       className="transition-transform duration-150 active:scale-[0.97]"
     >
-      <MotionConfig reducedMotion="user">
-        <LazyMotion features={COPY_ICON_FEATURES}>
-          <AnimatePresence mode="wait" initial={false}>
-            {copied ? (
-              <m.span
-                key="copied"
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.18, ease: EASE_OUT_QUINT }}
-                className="inline-flex items-center gap-1.5"
-              >
-                <Check aria-hidden="true" size={14} strokeWidth={2} />
-                Copiado
-              </m.span>
-            ) : (
-              <m.span
-                key="idle"
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.18, ease: EASE_OUT_QUINT }}
-                className="inline-flex items-center gap-1.5"
-              >
-                <Copy aria-hidden="true" size={14} strokeWidth={2} />
-                {label}
-              </m.span>
-            )}
-          </AnimatePresence>
-        </LazyMotion>
-      </MotionConfig>
+      <AnimatePresence mode="wait" initial={false}>
+        {copied ? (
+          <m.span
+            key="copied"
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.18, ease: EASE_OUT_QUINT }}
+            className="inline-flex items-center gap-1.5"
+          >
+            <Check aria-hidden="true" size={14} strokeWidth={2} />
+            Copiado
+          </m.span>
+        ) : (
+          <m.span
+            key="idle"
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.18, ease: EASE_OUT_QUINT }}
+            className="inline-flex items-center gap-1.5"
+          >
+            <Copy aria-hidden="true" size={14} strokeWidth={2} />
+            {label}
+          </m.span>
+        )}
+      </AnimatePresence>
     </Button>
   );
 }

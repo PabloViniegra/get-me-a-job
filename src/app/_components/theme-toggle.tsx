@@ -1,5 +1,4 @@
 "use client";
-"use no memo";
 
 import { Button } from "@heroui/react/button";
 import { Moon, Sun } from "lucide-react";
@@ -34,7 +33,6 @@ export function ThemeToggle() {
     }
 
     if (typeof document === "undefined" || !document.startViewTransition) {
-      console.warn("[theme-toggle] No VT API, falling back");
       setTheme(nextTheme);
       return;
     }
@@ -53,17 +51,9 @@ export function ThemeToggle() {
         }
       });
 
-      console.log("[theme-toggle] VT started, transition:", transition);
-
-      transition.ready
-        .then(() => console.log("[theme-toggle] VT ready"))
-        .catch((e) => console.error("[theme-toggle] VT ready error", e));
-
-      transition.finished
-        .then(() => console.log("[theme-toggle] VT finished"))
-        .catch((e) => console.error("[theme-toggle] VT finished error", e));
-    } catch (e) {
-      console.error("[theme-toggle] startViewTransition threw", e);
+      transition.ready.catch(() => {});
+      transition.finished.catch(() => {});
+    } catch {
       setTheme(nextTheme);
     }
 

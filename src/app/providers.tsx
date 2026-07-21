@@ -3,6 +3,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
+import { domMax, LazyMotion, MotionConfig } from "motion/react";
 import dynamic from "next/dynamic";
 import { ThemeProvider } from "next-themes";
 import { useState } from "react";
@@ -44,7 +45,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     >
       <QueryClientProvider client={queryClient}>
         <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
-          {children}
+          <LazyMotion features={domMax}>
+            <MotionConfig reducedMotion="user">{children}</MotionConfig>
+          </LazyMotion>
           <Toaster position="top-right" />
         </TRPCProvider>
       </QueryClientProvider>

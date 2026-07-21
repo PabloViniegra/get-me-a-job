@@ -1,5 +1,3 @@
-"use no memo";
-
 import { Card } from "@heroui/react/card";
 import { Skeleton } from "@heroui/react/skeleton";
 

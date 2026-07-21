@@ -1,12 +1,11 @@
 "use client";
-"use no memo";
 
 import { Button } from "@heroui/react/button";
 import { Chip } from "@heroui/react/chip";
 import { Link } from "@heroui/react/link";
 import { Modal } from "@heroui/react/modal";
 import { ArrowUpRight, BriefcaseBusiness, Sparkles } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import type { JobCardData } from "@/lib/jobs.dto";
 import { CoverLetterSection } from "./cover-letter-section";
 import { MatchScoreChip } from "./match-score-chip";
@@ -54,13 +53,18 @@ export function JobDetailModal({
     return () => cancelAnimationFrame(id);
   }, [isOpen, initialSection]);
 
-  if (data === null) return null;
+  const descriptionParagraphs = useMemo(
+    () => (data ? paragraphs(data.description) : []),
+    [data],
+  );
+  const whyItFitsParagraphs = useMemo(
+    () => (data?.whyItFits ? paragraphs(data.whyItFits) : []),
+    [data],
+  );
+  const linkedinHref =
+    data && HTTP_URL_PATTERN.test(data.linkedinUrl) ? data.linkedinUrl : null;
 
-  const descriptionParagraphs = paragraphs(data.description);
-  const whyItFitsParagraphs = data.whyItFits ? paragraphs(data.whyItFits) : [];
-  const linkedinHref = HTTP_URL_PATTERN.test(data.linkedinUrl)
-    ? data.linkedinUrl
-    : null;
+  if (data === null) return null;
 
   return (
     <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} variant="blur">

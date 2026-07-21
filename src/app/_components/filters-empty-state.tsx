@@ -1,5 +1,3 @@
-"use no memo";
-
 import { Button } from "@heroui/react/button";
 import { FilterX } from "lucide-react";
 

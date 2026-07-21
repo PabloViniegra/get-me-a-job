@@ -1,5 +1,3 @@
-"use no memo";
-
 import { Chip } from "@heroui/react/chip";
 import { FileText } from "lucide-react";
 

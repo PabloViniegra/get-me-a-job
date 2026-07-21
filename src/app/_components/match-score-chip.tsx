@@ -1,5 +1,3 @@
-"use no memo";
-
 import { Chip } from "@heroui/react/chip";
 import { LoaderCircle } from "lucide-react";
 import type { JSX } from "react";

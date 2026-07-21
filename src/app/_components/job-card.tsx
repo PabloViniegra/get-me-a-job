@@ -1,5 +1,4 @@
 "use client";
-"use no memo";
 
 import { Button } from "@heroui/react/button";
 import { Card } from "@heroui/react/card";

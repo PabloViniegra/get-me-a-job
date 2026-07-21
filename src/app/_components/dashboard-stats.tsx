@@ -1,5 +1,3 @@
-"use no memo";
-
 import type { JobsSummary } from "@/lib/jobs.list.schema";
 import { TIER_LABELS } from "@/lib/score-tier";
 

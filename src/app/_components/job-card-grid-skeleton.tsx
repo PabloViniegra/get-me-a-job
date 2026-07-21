@@ -1,5 +1,3 @@
-"use no memo";
-
 import { useId } from "react";
 import { JobCardSkeleton } from "./job-card-skeleton";
 

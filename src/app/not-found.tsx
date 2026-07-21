@@ -1,5 +1,3 @@
-"use no memo";
-
 import { Link } from "@heroui/react/link";
 import { SearchX } from "lucide-react";
 
