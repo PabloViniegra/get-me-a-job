@@ -1,5 +1,9 @@
+"use client";
+
 import { Button } from "@heroui/react/button";
+import { BorderBeam } from "border-beam";
 import { LoaderCircle, RefreshCw } from "lucide-react";
+import { useTheme } from "next-themes";
 import type { ReactNode } from "react";
 import { RelativeTime } from "../shared/relative-time";
 import { ThemeToggle } from "../shared/theme-toggle";
@@ -22,6 +26,9 @@ export function DashboardHeader({
   isRefreshing,
   onRefresh,
 }: DashboardHeaderProps) {
+  const { resolvedTheme } = useTheme();
+  const beamTheme = resolvedTheme === "light" ? "light" : "dark";
+
   return (
     <header className="flex flex-wrap items-center justify-between gap-4">
       <div className="flex flex-col gap-1">
@@ -49,24 +56,35 @@ export function DashboardHeader({
       </div>
       <div className="flex flex-wrap items-center gap-3">
         {actions}
-        <Button
-          aria-label={isRefreshing ? "Recargando datos" : "Actualizar ofertas"}
-          variant="secondary"
-          onPress={onRefresh}
-          isDisabled={isRefreshing}
-          className="transition-transform duration-150 active:scale-[0.97]"
+        <BorderBeam
+          size="sm"
+          colorVariant="ocean"
+          theme={beamTheme}
+          active={isRefreshing}
+          duration={1.2}
+          brightness={1.8}
         >
-          {isRefreshing ? (
-            <LoaderCircle
-              aria-hidden="true"
-              size={16}
-              className="motion-safe:animate-spin"
-            />
-          ) : (
-            <RefreshCw size={16} aria-hidden="true" />
-          )}
-          {isRefreshing ? "Recargando…" : "Actualizar"}
-        </Button>
+          <Button
+            aria-label={
+              isRefreshing ? "Recargando datos" : "Actualizar ofertas"
+            }
+            variant="secondary"
+            onPress={onRefresh}
+            isDisabled={isRefreshing}
+            className="transition-transform duration-150 active:scale-[0.97]"
+          >
+            {isRefreshing ? (
+              <LoaderCircle
+                aria-hidden="true"
+                size={16}
+                className="motion-safe:animate-spin"
+              />
+            ) : (
+              <RefreshCw size={16} aria-hidden="true" />
+            )}
+            {isRefreshing ? "Recargando…" : "Actualizar"}
+          </Button>
+        </BorderBeam>
         <ThemeToggle />
       </div>
     </header>
